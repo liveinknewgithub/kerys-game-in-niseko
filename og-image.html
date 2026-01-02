@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>OG Image Generator</title>
+</head>
+<body style="margin:0;padding:20px;background:#333;">
+    <canvas id="canvas" width="1200" height="630"></canvas>
+    <br><br>
+    <a id="download" download="og-image.png" style="color:white;font-size:20px;">Click here to download the image</a>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Sky gradient
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, 630);
+        skyGrad.addColorStop(0, '#1a1a2e');
+        skyGrad.addColorStop(0.5, '#4a6fa5');
+        skyGrad.addColorStop(1, '#87ceeb');
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, 1200, 630);
+
+        // Snow-capped mountains
+        ctx.fillStyle = '#e8e8e8';
+        ctx.beginPath();
+        ctx.moveTo(0, 400);
+        ctx.lineTo(200, 180);
+        ctx.lineTo(350, 320);
+        ctx.lineTo(500, 120);
+        ctx.lineTo(700, 280);
+        ctx.lineTo(900, 100);
+        ctx.lineTo(1100, 250);
+        ctx.lineTo(1200, 180);
+        ctx.lineTo(1200, 630);
+        ctx.lineTo(0, 630);
+        ctx.closePath();
+        ctx.fill();
+
+        // Mountain shadows
+        ctx.fillStyle = '#c5d5e8';
+        ctx.beginPath();
+        ctx.moveTo(200, 180);
+        ctx.lineTo(280, 280);
+        ctx.lineTo(350, 320);
+        ctx.lineTo(200, 180);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(500, 120);
+        ctx.lineTo(620, 220);
+        ctx.lineTo(700, 280);
+        ctx.lineTo(500, 120);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(900, 100);
+        ctx.lineTo(1020, 200);
+        ctx.lineTo(1100, 250);
+        ctx.lineTo(900, 100);
+        ctx.fill();
+
+        // Pine trees
+        function drawTree(x, y, size) {
+            ctx.fillStyle = '#2d5a3d';
+            ctx.beginPath();
+            ctx.moveTo(x, y - size);
+            ctx.lineTo(x + size * 0.6, y);
+            ctx.lineTo(x - size * 0.6, y);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(x, y - size * 1.5);
+            ctx.lineTo(x + size * 0.5, y - size * 0.5);
+            ctx.lineTo(x - size * 0.5, y - size * 0.5);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = '#4a3728';
+            ctx.fillRect(x - size * 0.1, y, size * 0.2, size * 0.3);
+        }
+
+        // Draw trees
+        drawTree(80, 480, 40);
+        drawTree(150, 500, 50);
+        drawTree(1050, 450, 45);
+        drawTree(1120, 480, 55);
+        drawTree(950, 520, 35);
+
+        // Chairlift
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(100, 350);
+        ctx.lineTo(400, 200);
+        ctx.stroke();
+
+        // Lift towers
+        ctx.fillStyle = '#555';
+        ctx.fillRect(95, 350, 10, 80);
+        ctx.fillRect(395, 200, 10, 60);
+
+        // Lift chairs
+        function drawChair(x, y) {
+            ctx.fillStyle = '#e74c3c';
+            ctx.fillRect(x - 15, y, 30, 8);
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x, y - 15);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+        }
+        drawChair(180, 310);
+        drawChair(280, 260);
+
+        // Lodge building
+        ctx.fillStyle = '#8B4513';
+        ctx.fillRect(750, 400, 180, 100);
+        ctx.fillStyle = '#654321';
+        ctx.beginPath();
+        ctx.moveTo(730, 400);
+        ctx.lineTo(840, 330);
+        ctx.lineTo(950, 400);
+        ctx.closePath();
+        ctx.fill();
+
+        // Windows with warm light
+        ctx.fillStyle = '#ffdd88';
+        ctx.fillRect(770, 430, 30, 30);
+        ctx.fillRect(820, 430, 30, 30);
+        ctx.fillRect(870, 430, 30, 30);
+
+        // Door
+        ctx.fillStyle = '#4a3728';
+        ctx.fillRect(810, 460, 40, 40);
+
+        // Smoke from chimney
+        ctx.fillStyle = '#d4d4d4';
+        ctx.fillRect(900, 350, 20, 50);
+        ctx.beginPath();
+        ctx.arc(910, 340, 12, 0, Math.PI * 2);
+        ctx.arc(920, 320, 15, 0, Math.PI * 2);
+        ctx.arc(905, 300, 10, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Skiers
+        function drawSkier(x, y, color) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y - 20, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillRect(x - 5, y - 12, 10, 20);
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(x - 15, y + 8);
+            ctx.lineTo(x + 20, y + 8);
+            ctx.stroke();
+        }
+        drawSkier(550, 380, '#e74c3c');
+        drawSkier(620, 420, '#3498db');
+        drawSkier(480, 350, '#9b59b6');
+
+        // Snowflakes
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        for (let i = 0; i < 50; i++) {
+            const x = Math.random() * 1200;
+            const y = Math.random() * 400;
+            const size = Math.random() * 4 + 2;
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Title background
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+        ctx.roundRect(200, 480, 800, 120, 20);
+        ctx.fill();
+
+        // Game title
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 64px Arial, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Build a Ski Resort!', 600, 545);
+
+        // Subtitle
+        ctx.fillStyle = '#87ceeb';
+        ctx.font = '28px Arial, sans-serif';
+        ctx.fillText('Build, manage & grow your dream mountain resort', 600, 585);
+
+        // Download link
+        document.getElementById('download').href = canvas.toDataURL('image/png');
+    </script>
+</body>
+</html>
