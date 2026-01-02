@@ -1,0 +1,3812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Build a Ski Resort!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            background: #1a1a2e;
+        }
+
+        .game-wrapper {
+            display: flex;
+            height: 100vh;
+        }
+
+        #gameCanvas {
+            flex: 1;
+            display: block;
+        }
+
+        .side-panel {
+            width: 280px;
+            background: linear-gradient(180deg, #2d3748 0%, #1a202c 100%);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+        }
+
+        .panel-header {
+            color: #fff;
+            font-size: 1.4em;
+            font-weight: bold;
+            text-align: center;
+            padding: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .stat-box {
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-box .label {
+            color: #a0aec0;
+            font-size: 0.75em;
+            text-transform: uppercase;
+        }
+
+        .stat-box .value {
+            color: #fff;
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        .stat-box.coins .value {
+            color: #f6e05e;
+        }
+
+        .stat-box.guests .value {
+            color: #68d391;
+        }
+
+        .stat-box.rating .value {
+            color: #fc8181;
+        }
+
+        .category-tabs {
+            display: flex;
+            gap: 5px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 8px 5px;
+            border: none;
+            border-radius: 8px 8px 0 0;
+            background: rgba(255,255,255,0.1);
+            color: #a0aec0;
+            cursor: pointer;
+            font-size: 0.75em;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .tab-btn.active {
+            background: rgba(255,255,255,0.25);
+            color: #fff;
+        }
+
+        .build-menu {
+            background: rgba(255,255,255,0.05);
+            border-radius: 0 0 10px 10px;
+            padding: 10px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .build-item {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid transparent;
+            border-radius: 10px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .build-item:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+
+        .build-item.selected {
+            border-color: #68d391;
+            background: rgba(104, 211, 145, 0.2);
+        }
+
+        .build-item.locked {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .build-item .icon {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .build-item .name {
+            color: #fff;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .build-item .cost {
+            color: #f6e05e;
+            font-size: 0.75em;
+        }
+
+        .build-item .income {
+            color: #68d391;
+            font-size: 0.65em;
+        }
+
+        .weather-display {
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .weather-info {
+            color: #fff;
+        }
+
+        .weather-icon {
+            font-size: 1.5em;
+        }
+
+        .time-display {
+            color: #a0aec0;
+            font-size: 0.85em;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .action-btn.save {
+            background: #4299e1;
+            color: white;
+        }
+
+        .action-btn.delete {
+            background: #fc8181;
+            color: white;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+
+        .tooltip {
+            position: fixed;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.85em;
+            pointer-events: none;
+            z-index: 1000;
+            max-width: 200px;
+            display: none;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #68d391, #38a169);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.1em;
+            z-index: 1000;
+            animation: slideDown 0.3s ease, fadeOut 0.3s ease 2s forwards;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+
+        @keyframes slideDown {
+            from { top: -50px; opacity: 0; }
+            to { top: 20px; opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            to { opacity: 0; top: -50px; }
+        }
+
+        .powder-day {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 30px 50px;
+            border-radius: 20px;
+            text-align: center;
+            z-index: 1000;
+            animation: powderPop 0.5s ease;
+        }
+
+        @keyframes powderPop {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        .powder-day h2 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-wrapper">
+        <canvas id="gameCanvas"></canvas>
+        <div class="side-panel">
+            <div class="panel-header">Build a Ski Resort!</div>
+
+            <div class="stats-bar">
+                <div class="stat-box coins">
+                    <div class="label">Coins</div>
+                    <div class="value" id="coinCount">500</div>
+                </div>
+                <div class="stat-box guests">
+                    <div class="label">Guests</div>
+                    <div class="value" id="guestCount">0</div>
+                </div>
+                <div class="stat-box rating">
+                    <div class="label">Rating</div>
+                    <div class="value" id="starRating">1</div>
+                </div>
+                <div class="stat-box">
+                    <div class="label">Income/s</div>
+                    <div class="value" id="incomeRate">0</div>
+                </div>
+            </div>
+
+            <div class="weather-display">
+                <div class="weather-info">
+                    <span class="weather-icon" id="weatherIcon">❄️</span>
+                    <span id="weatherText">Snowing</span>
+                </div>
+                <div class="time-display" id="timeDisplay">Day 1 - Morning</div>
+            </div>
+
+            <div class="category-tabs">
+                <button class="tab-btn active" data-category="lifts">Lifts</button>
+                <button class="tab-btn" data-category="slopes">Slopes</button>
+                <button class="tab-btn" data-category="buildings">Build</button>
+                <button class="tab-btn" data-category="decor">Decor</button>
+            </div>
+
+            <div class="build-menu" id="buildMenu"></div>
+
+            <div class="action-buttons">
+                <button class="action-btn save" onclick="saveGame()">Save</button>
+                <button class="action-btn delete" onclick="toggleDeleteMode()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Resize canvas
+        function resizeCanvas() {
+            canvas.width = window.innerWidth - 280;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Game state
+        let coins = 1000;
+        let guests = [];
+        let animals = [];
+        let buildings = [];
+        let snowflakes = [];
+        let particles = [];
+        let floatingTexts = [];
+        let deleteMode = false;
+        let selectedBuilding = null;
+        let currentCategory = 'lifts';
+        let gameTime = 0;
+        let dayNumber = 1;
+        let isPowderDay = false;
+        let powderDayTimer = 0;
+
+        // Grid settings
+        const TILE_WIDTH = 64;
+        const TILE_HEIGHT = 32;
+        const GRID_WIDTH = 80;
+        const GRID_HEIGHT = 100;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        // Building definitions
+        const BUILDINGS = {
+            // ========== LIFTS (10) ==========
+            chairlift: { name: 'Chairlift', icon: '🚡', cost: 200, income: 15, category: 'lifts', width: 1, height: 3, unlockAt: 0 },
+            gondola: { name: 'Gondola', icon: '🚠', cost: 500, income: 40, category: 'lifts', width: 1, height: 4, unlockAt: 1000 },
+            magicCarpet: { name: 'Magic Carpet', icon: '➡️', cost: 100, income: 8, category: 'lifts', width: 1, height: 2, unlockAt: 0 },
+            tbar: { name: 'T-Bar Lift', icon: '⬆️', cost: 150, income: 10, category: 'lifts', width: 1, height: 2, unlockAt: 300 },
+            helicopter: { name: 'Helipad', icon: '🚁', cost: 2000, income: 150, category: 'lifts', width: 2, height: 2, unlockAt: 5000 },
+            cableCar: { name: 'Cable Car', icon: '🚃', cost: 800, income: 60, category: 'lifts', width: 2, height: 4, unlockAt: 2000 },
+            funicular: { name: 'Funicular', icon: '🚋', cost: 1200, income: 85, category: 'lifts', width: 2, height: 5, unlockAt: 3000 },
+            ropeTow: { name: 'Rope Tow', icon: '🪢', cost: 80, income: 5, category: 'lifts', width: 1, height: 2, unlockAt: 0 },
+            quadChair: { name: 'Quad Chair', icon: '🪑', cost: 400, income: 30, category: 'lifts', width: 1, height: 3, unlockAt: 800 },
+            sixPack: { name: '6-Pack Lift', icon: '⬆️', cost: 700, income: 55, category: 'lifts', width: 2, height: 4, unlockAt: 1500 },
+
+            // ========== SLOPES & TERRAIN (15) ==========
+            greenSlope: { name: 'Easy Slope', icon: '🟢', cost: 100, income: 5, category: 'slopes', width: 1, height: 2, unlockAt: 0 },
+            blueSlope: { name: 'Medium Slope', icon: '🔵', cost: 200, income: 12, category: 'slopes', width: 1, height: 3, unlockAt: 500 },
+            blackSlope: { name: 'Hard Slope', icon: '⚫', cost: 400, income: 25, category: 'slopes', width: 1, height: 4, unlockAt: 1500 },
+            doubleBlack: { name: 'Expert Run', icon: '💀', cost: 800, income: 50, category: 'slopes', width: 1, height: 4, unlockAt: 3000 },
+            halfpipe: { name: 'Halfpipe', icon: '🛹', cost: 600, income: 40, category: 'slopes', width: 2, height: 3, unlockAt: 2000 },
+            skiJump: { name: 'Ski Jump', icon: '🎯', cost: 900, income: 55, category: 'slopes', width: 2, height: 4, unlockAt: 2500 },
+            terrainPark: { name: 'Terrain Park', icon: '🏂', cost: 700, income: 45, category: 'slopes', width: 3, height: 3, unlockAt: 1800 },
+            iceRink: { name: 'Ice Rink', icon: '⛸️', cost: 500, income: 35, category: 'slopes', width: 3, height: 3, unlockAt: 1200 },
+            tubingHill: { name: 'Tubing Hill', icon: '🛞', cost: 300, income: 22, category: 'slopes', width: 2, height: 3, unlockAt: 700 },
+            moguls: { name: 'Mogul Field', icon: '⚪', cost: 350, income: 28, category: 'slopes', width: 2, height: 3, unlockAt: 900 },
+            glade: { name: 'Tree Glade', icon: '🌲', cost: 450, income: 32, category: 'slopes', width: 3, height: 4, unlockAt: 1100 },
+            crossCountry: { name: 'XC Trail', icon: '🎿', cost: 250, income: 18, category: 'slopes', width: 4, height: 2, unlockAt: 600 },
+            bobsled: { name: 'Bobsled Run', icon: '🛷', cost: 1500, income: 100, category: 'slopes', width: 2, height: 6, unlockAt: 4000 },
+            snowPark: { name: 'Snow Park', icon: '❄️', cost: 550, income: 38, category: 'slopes', width: 3, height: 3, unlockAt: 1300 },
+            raceCourse: { name: 'Race Course', icon: '🏁', cost: 800, income: 52, category: 'slopes', width: 2, height: 5, unlockAt: 2200 },
+
+            // ========== FOOD & DRINKS (20) ==========
+            lodge: { name: 'Lodge', icon: '🏠', cost: 300, income: 20, category: 'buildings', width: 2, height: 2, unlockAt: 0 },
+            restaurant: { name: 'Restaurant', icon: '🍽️', cost: 400, income: 30, category: 'buildings', width: 2, height: 2, unlockAt: 300 },
+            hotChocolate: { name: 'Hot Cocoa', icon: '☕', cost: 150, income: 12, category: 'buildings', width: 1, height: 1, unlockAt: 100 },
+            bakery: { name: 'Bakery', icon: '🥐', cost: 320, income: 26, category: 'buildings', width: 2, height: 2, unlockAt: 500 },
+            pizzeria: { name: 'Pizzeria', icon: '🍕', cost: 350, income: 28, category: 'buildings', width: 2, height: 2, unlockAt: 550 },
+            bar: { name: 'Après-Ski Bar', icon: '🍺', cost: 400, income: 32, category: 'buildings', width: 2, height: 2, unlockAt: 700 },
+            iceCreamShop: { name: 'Ice Cream', icon: '🍦', cost: 200, income: 16, category: 'buildings', width: 1, height: 1, unlockAt: 300 },
+            sushiBar: { name: 'Sushi Bar', icon: '🍣', cost: 480, income: 36, category: 'buildings', width: 2, height: 2, unlockAt: 950 },
+            ramenShop: { name: 'Ramen Shop', icon: '🍜', cost: 380, income: 29, category: 'buildings', width: 2, height: 2, unlockAt: 650 },
+            steakhouse: { name: 'Steakhouse', icon: '🥩', cost: 550, income: 42, category: 'buildings', width: 2, height: 2, unlockAt: 1100 },
+            waffleHouse: { name: 'Waffle House', icon: '🧇', cost: 280, income: 22, category: 'buildings', width: 2, height: 1, unlockAt: 400 },
+            fonduePot: { name: 'Fondue', icon: '🫕', cost: 420, income: 33, category: 'buildings', width: 2, height: 2, unlockAt: 850 },
+            teaHouse: { name: 'Tea House', icon: '🍵', cost: 300, income: 24, category: 'buildings', width: 2, height: 2, unlockAt: 550 },
+            burgerJoint: { name: 'Burger Joint', icon: '🍔', cost: 320, income: 26, category: 'buildings', width: 2, height: 2, unlockAt: 500 },
+            winery: { name: 'Wine Bar', icon: '🍷', cost: 600, income: 48, category: 'buildings', width: 2, height: 2, unlockAt: 1400 },
+            brewery: { name: 'Craft Brewery', icon: '🍻', cost: 700, income: 55, category: 'buildings', width: 3, height: 2, unlockAt: 1600 },
+            donutShop: { name: 'Donut Shop', icon: '🍩', cost: 220, income: 18, category: 'buildings', width: 1, height: 1, unlockAt: 350 },
+            tacosStand: { name: 'Taco Stand', icon: '🌮', cost: 180, income: 15, category: 'buildings', width: 1, height: 1, unlockAt: 280 },
+            pretzelCart: { name: 'Pretzel Cart', icon: '🥨', cost: 120, income: 10, category: 'buildings', width: 1, height: 1, unlockAt: 150 },
+            pancakeHouse: { name: 'Pancakes', icon: '🥞', cost: 340, income: 27, category: 'buildings', width: 2, height: 2, unlockAt: 600 },
+
+            // ========== ACCOMMODATION (10) ==========
+            cabin: { name: 'Cozy Cabin', icon: '🛖', cost: 350, income: 25, category: 'buildings', width: 2, height: 2, unlockAt: 600 },
+            hotel: { name: 'Hotel', icon: '🏨', cost: 800, income: 60, category: 'buildings', width: 3, height: 2, unlockAt: 2000 },
+            grandHotel: { name: 'Grand Hotel', icon: '🏰', cost: 2500, income: 180, category: 'buildings', width: 4, height: 3, unlockAt: 6000 },
+            chalet: { name: 'Chalet', icon: '🏡', cost: 600, income: 45, category: 'buildings', width: 2, height: 2, unlockAt: 1200 },
+            hostel: { name: 'Hostel', icon: '🛏️', cost: 400, income: 30, category: 'buildings', width: 2, height: 2, unlockAt: 700 },
+            treehouse: { name: 'Treehouse', icon: '🌳', cost: 500, income: 40, category: 'buildings', width: 2, height: 2, unlockAt: 1000 },
+            iglooHotel: { name: 'Ice Hotel', icon: '🧊', cost: 1800, income: 130, category: 'buildings', width: 4, height: 3, unlockAt: 5000 },
+            luxuryVilla: { name: 'Luxury Villa', icon: '🏘️', cost: 3500, income: 250, category: 'buildings', width: 5, height: 3, unlockAt: 8000 },
+            campground: { name: 'Campground', icon: '⛺', cost: 200, income: 15, category: 'buildings', width: 3, height: 2, unlockAt: 400 },
+            rvPark: { name: 'RV Park', icon: '🚐', cost: 350, income: 28, category: 'buildings', width: 3, height: 2, unlockAt: 700 },
+
+            // ========== SERVICES & SHOPS (15) ==========
+            rentalShop: { name: 'Rental Shop', icon: '🎿', cost: 250, income: 18, category: 'buildings', width: 2, height: 1, unlockAt: 200 },
+            skiSchool: { name: 'Ski School', icon: '🎓', cost: 450, income: 35, category: 'buildings', width: 2, height: 2, unlockAt: 800 },
+            giftShop: { name: 'Gift Shop', icon: '🎁', cost: 280, income: 22, category: 'buildings', width: 2, height: 1, unlockAt: 400 },
+            firstAid: { name: 'First Aid', icon: '🏥', cost: 200, income: 15, category: 'buildings', width: 2, height: 2, unlockAt: 250 },
+            ticketBooth: { name: 'Ticket Booth', icon: '🎟️', cost: 120, income: 10, category: 'buildings', width: 1, height: 1, unlockAt: 0 },
+            photoSpot: { name: 'Photo Booth', icon: '📸', cost: 180, income: 14, category: 'buildings', width: 1, height: 1, unlockAt: 350 },
+            snowmobile: { name: 'Snowmobile', icon: '🏍️', cost: 500, income: 38, category: 'buildings', width: 2, height: 2, unlockAt: 1100 },
+            skiRepair: { name: 'Ski Repair', icon: '🔧', cost: 300, income: 24, category: 'buildings', width: 2, height: 1, unlockAt: 500 },
+            locker: { name: 'Lockers', icon: '🔐', cost: 180, income: 14, category: 'buildings', width: 1, height: 1, unlockAt: 300 },
+            nursery: { name: 'Kids Nursery', icon: '👶', cost: 400, income: 32, category: 'buildings', width: 2, height: 2, unlockAt: 750 },
+            skiWax: { name: 'Wax Shop', icon: '✨', cost: 200, income: 16, category: 'buildings', width: 1, height: 1, unlockAt: 400 },
+            bootFitter: { name: 'Boot Fitting', icon: '🥾', cost: 350, income: 28, category: 'buildings', width: 2, height: 1, unlockAt: 600 },
+            clothingStore: { name: 'Ski Wear', icon: '🧥', cost: 450, income: 36, category: 'buildings', width: 2, height: 2, unlockAt: 900 },
+            pharmacy: { name: 'Pharmacy', icon: '💊', cost: 250, income: 20, category: 'buildings', width: 1, height: 1, unlockAt: 450 },
+            bank: { name: 'ATM Bank', icon: '🏦', cost: 300, income: 25, category: 'buildings', width: 1, height: 1, unlockAt: 500 },
+
+            // ========== ENTERTAINMENT (15) ==========
+            spa: { name: 'Spa', icon: '♨️', cost: 600, income: 45, category: 'buildings', width: 2, height: 2, unlockAt: 1200 },
+            cinema: { name: 'Mini Cinema', icon: '🎬', cost: 550, income: 38, category: 'buildings', width: 3, height: 2, unlockAt: 1000 },
+            arcade: { name: 'Arcade', icon: '🎮', cost: 450, income: 34, category: 'buildings', width: 2, height: 2, unlockAt: 900 },
+            clockTower: { name: 'Clock Tower', icon: '🕰️', cost: 800, income: 50, category: 'buildings', width: 2, height: 2, unlockAt: 1500 },
+            casino: { name: 'Casino', icon: '🎰', cost: 2000, income: 150, category: 'buildings', width: 4, height: 3, unlockAt: 5500 },
+            nightclub: { name: 'Nightclub', icon: '🪩', cost: 900, income: 70, category: 'buildings', width: 3, height: 2, unlockAt: 2000 },
+            bowling: { name: 'Bowling', icon: '🎳', cost: 650, income: 50, category: 'buildings', width: 3, height: 2, unlockAt: 1400 },
+            theater: { name: 'Theater', icon: '🎭', cost: 1200, income: 90, category: 'buildings', width: 4, height: 3, unlockAt: 3000 },
+            aquarium: { name: 'Aquarium', icon: '🐠', cost: 1500, income: 110, category: 'buildings', width: 4, height: 3, unlockAt: 4000 },
+            museum: { name: 'Ski Museum', icon: '🏛️', cost: 800, income: 55, category: 'buildings', width: 3, height: 2, unlockAt: 1800 },
+            library: { name: 'Library', icon: '📚', cost: 400, income: 30, category: 'buildings', width: 2, height: 2, unlockAt: 800 },
+            karaoke: { name: 'Karaoke', icon: '🎤', cost: 500, income: 40, category: 'buildings', width: 2, height: 2, unlockAt: 1000 },
+            escapeRoom: { name: 'Escape Room', icon: '🔑', cost: 450, income: 35, category: 'buildings', width: 2, height: 2, unlockAt: 950 },
+            laserTag: { name: 'Laser Tag', icon: '🔫', cost: 600, income: 48, category: 'buildings', width: 3, height: 2, unlockAt: 1300 },
+            virtualReality: { name: 'VR Arcade', icon: '🥽', cost: 700, income: 55, category: 'buildings', width: 2, height: 2, unlockAt: 1600 },
+
+            // ========== WELLNESS & FITNESS (8) ==========
+            gym: { name: 'Fitness Gym', icon: '💪', cost: 500, income: 40, category: 'buildings', width: 2, height: 2, unlockAt: 1000 },
+            yogaStudio: { name: 'Yoga Studio', icon: '🧘', cost: 350, income: 28, category: 'buildings', width: 2, height: 2, unlockAt: 700 },
+            sauna: { name: 'Sauna', icon: '🧖', cost: 400, income: 32, category: 'buildings', width: 2, height: 2, unlockAt: 800 },
+            massageParlor: { name: 'Massage', icon: '💆', cost: 450, income: 36, category: 'buildings', width: 2, height: 2, unlockAt: 900 },
+            pool: { name: 'Indoor Pool', icon: '🏊', cost: 1000, income: 75, category: 'buildings', width: 4, height: 3, unlockAt: 2500 },
+            hairSalon: { name: 'Hair Salon', icon: '💇', cost: 280, income: 22, category: 'buildings', width: 1, height: 1, unlockAt: 500 },
+            nailSpa: { name: 'Nail Spa', icon: '💅', cost: 250, income: 20, category: 'buildings', width: 1, height: 1, unlockAt: 450 },
+            meditation: { name: 'Zen Garden', icon: '🪷', cost: 300, income: 24, category: 'buildings', width: 2, height: 2, unlockAt: 600 },
+
+            // ========== DECORATIONS (30) ==========
+            pineTree: { name: 'Pine Tree', icon: '🌲', cost: 25, income: 1, category: 'decor', width: 1, height: 1, unlockAt: 0 },
+            snowman: { name: 'Snowman', icon: '⛄', cost: 30, income: 2, category: 'decor', width: 1, height: 1, unlockAt: 0 },
+            bench: { name: 'Bench', icon: '🪑', cost: 20, income: 1, category: 'decor', width: 1, height: 1, unlockAt: 0 },
+            flag: { name: 'Flag', icon: '🚩', cost: 15, income: 1, category: 'decor', width: 1, height: 1, unlockAt: 0 },
+            lamp: { name: 'Street Lamp', icon: '🏮', cost: 40, income: 2, category: 'decor', width: 1, height: 1, unlockAt: 100 },
+            fountain: { name: 'Ice Fountain', icon: '⛲', cost: 200, income: 8, category: 'decor', width: 2, height: 2, unlockAt: 500 },
+            igloo: { name: 'Igloo', icon: '🧊', cost: 150, income: 6, category: 'decor', width: 2, height: 2, unlockAt: 200 },
+            firePit: { name: 'Fire Pit', icon: '🔥', cost: 80, income: 4, category: 'decor', width: 1, height: 1, unlockAt: 150 },
+            hotTub: { name: 'Hot Tub', icon: '🛁', cost: 300, income: 15, category: 'decor', width: 2, height: 2, unlockAt: 600 },
+            statue: { name: 'Ice Statue', icon: '🗿', cost: 250, income: 10, category: 'decor', width: 1, height: 1, unlockAt: 400 },
+            archway: { name: 'Snow Arch', icon: '🌈', cost: 180, income: 7, category: 'decor', width: 2, height: 1, unlockAt: 350 },
+            treeCluster: { name: 'Forest', icon: '🌲', cost: 100, income: 5, category: 'decor', width: 2, height: 2, unlockAt: 100 },
+            rockFormation: { name: 'Rocks', icon: '🪨', cost: 60, income: 3, category: 'decor', width: 1, height: 1, unlockAt: 50 },
+            christmasTree: { name: 'Xmas Tree', icon: '🎄', cost: 120, income: 6, category: 'decor', width: 1, height: 1, unlockAt: 200 },
+            skiRack: { name: 'Ski Rack', icon: '🎿', cost: 50, income: 2, category: 'decor', width: 1, height: 1, unlockAt: 50 },
+            snowCannon: { name: 'Snow Cannon', icon: '💨', cost: 400, income: 20, category: 'decor', width: 1, height: 1, unlockAt: 800 },
+            observation: { name: 'View Tower', icon: '🗼', cost: 600, income: 30, category: 'decor', width: 2, height: 2, unlockAt: 1000 },
+            playground: { name: 'Playground', icon: '🛝', cost: 350, income: 18, category: 'decor', width: 2, height: 2, unlockAt: 500 },
+            reindeer: { name: 'Reindeer', icon: '🦌', cost: 200, income: 10, category: 'decor', width: 1, height: 1, unlockAt: 300 },
+            sleigh: { name: 'Santa Sleigh', icon: '🛷', cost: 280, income: 14, category: 'decor', width: 2, height: 1, unlockAt: 450 },
+            snowGlobe: { name: 'Snow Globe', icon: '🔮', cost: 150, income: 7, category: 'decor', width: 1, height: 1, unlockAt: 250 },
+            starDecor: { name: 'Star Light', icon: '⭐', cost: 100, income: 5, category: 'decor', width: 1, height: 1, unlockAt: 180 },
+            candyCane: { name: 'Candy Cane', icon: '🍬', cost: 80, income: 4, category: 'decor', width: 1, height: 1, unlockAt: 120 },
+            wreath: { name: 'Wreath', icon: '🎀', cost: 70, income: 3, category: 'decor', width: 1, height: 1, unlockAt: 100 },
+            garland: { name: 'Garland', icon: '🎊', cost: 90, income: 4, category: 'decor', width: 2, height: 1, unlockAt: 150 },
+            snowAngel: { name: 'Snow Angel', icon: '👼', cost: 40, income: 2, category: 'decor', width: 1, height: 1, unlockAt: 60 },
+            iceSculpture: { name: 'Ice Bear', icon: '🐻‍❄️', cost: 350, income: 18, category: 'decor', width: 2, height: 2, unlockAt: 700 },
+            penguin: { name: 'Penguin', icon: '🐧', cost: 180, income: 9, category: 'decor', width: 1, height: 1, unlockAt: 300 },
+            polarBear: { name: 'Polar Bear', icon: '🐻‍❄️', cost: 300, income: 15, category: 'decor', width: 2, height: 2, unlockAt: 550 },
+            skiPatrol: { name: 'Ski Patrol', icon: '🚨', cost: 220, income: 12, category: 'decor', width: 1, height: 1, unlockAt: 400 },
+            weatherVane: { name: 'Weather Vane', icon: '🌬️', cost: 130, income: 6, category: 'decor', width: 1, height: 1, unlockAt: 220 },
+            telescope: { name: 'Telescope', icon: '🔭', cost: 200, income: 10, category: 'decor', width: 1, height: 1, unlockAt: 350 },
+            windmill: { name: 'Windmill', icon: '🌀', cost: 400, income: 22, category: 'decor', width: 2, height: 2, unlockAt: 800 },
+            bridge: { name: 'Snow Bridge', icon: '🌉', cost: 250, income: 12, category: 'decor', width: 3, height: 1, unlockAt: 500 },
+            gazebo: { name: 'Gazebo', icon: '⛱️', cost: 320, income: 16, category: 'decor', width: 2, height: 2, unlockAt: 650 },
+        };
+
+        // Initialize snowflakes
+        for (let i = 0; i < 300; i++) {
+            snowflakes.push({
+                x: Math.random() * canvas.width * 3,
+                y: Math.random() * canvas.height * 3,
+                size: Math.random() * 4 + 2,
+                speed: Math.random() * 2 + 1,
+                wobble: Math.random() * Math.PI * 2
+            });
+        }
+
+        // Initialize some animals
+        function spawnAnimals() {
+            // Deer
+            for (let i = 0; i < 15; i++) {
+                animals.push({
+                    type: 'deer',
+                    x: Math.random() * canvas.width * 2,
+                    y: Math.random() * canvas.height * 0.5 + 100,
+                    vx: (Math.random() - 0.5) * 0.5,
+                    targetX: Math.random() * canvas.width,
+                    frame: 0
+                });
+            }
+            // Rabbits
+            for (let i = 0; i < 20; i++) {
+                animals.push({
+                    type: 'rabbit',
+                    x: Math.random() * canvas.width * 2,
+                    y: Math.random() * canvas.height * 0.7 + 200,
+                    vx: 0,
+                    hopTimer: Math.random() * 100,
+                    isHopping: false
+                });
+            }
+            // Birds
+            for (let i = 0; i < 12; i++) {
+                animals.push({
+                    type: 'bird',
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * 150 + 50,
+                    vx: (Math.random() - 0.5) * 3,
+                    vy: 0,
+                    wingPhase: Math.random() * Math.PI * 2
+                });
+            }
+        }
+        spawnAnimals();
+
+        // Convert grid to screen coordinates (isometric)
+        function gridToScreen(gx, gy) {
+            const x = (gx - gy) * (TILE_WIDTH / 2) + canvas.width / 2 + offsetX;
+            const y = (gx + gy) * (TILE_HEIGHT / 2) + 100 + offsetY;
+            return { x, y };
+        }
+
+        // Convert screen to grid coordinates
+        function screenToGrid(sx, sy) {
+            const adjustedX = sx - canvas.width / 2 - offsetX;
+            const adjustedY = sy - 100 - offsetY;
+            const gx = (adjustedX / (TILE_WIDTH / 2) + adjustedY / (TILE_HEIGHT / 2)) / 2;
+            const gy = (adjustedY / (TILE_HEIGHT / 2) - adjustedX / (TILE_WIDTH / 2)) / 2;
+            return { gx: Math.floor(gx), gy: Math.floor(gy) };
+        }
+
+        // Check if grid position is valid
+        function isValidPosition(gx, gy, width, height) {
+            if (gx < 0 || gy < 0 || gx + width > GRID_WIDTH || gy + height > GRID_HEIGHT) return false;
+
+            for (let b of buildings) {
+                const def = BUILDINGS[b.type];
+                for (let dx = 0; dx < width; dx++) {
+                    for (let dy = 0; dy < height; dy++) {
+                        for (let bx = 0; bx < def.width; bx++) {
+                            for (let by = 0; by < def.height; by++) {
+                                if (gx + dx === b.gx + bx && gy + dy === b.gy + by) {
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+        // Get terrain height based on grid position (mountain effect)
+        function getTerrainHeight(gx, gy) {
+            const centerX = GRID_WIDTH / 2;
+            const distFromCenter = Math.abs(gx - centerX);
+            const heightFromTop = gy;
+            return Math.max(0, (GRID_HEIGHT - heightFromTop) * 3 - distFromCenter * 2);
+        }
+
+        // Draw isometric tile
+        function drawTile(gx, gy, color, height = 0) {
+            const pos = gridToScreen(gx, gy);
+            const terrainH = getTerrainHeight(gx, gy) + height;
+
+            ctx.save();
+            ctx.translate(pos.x, pos.y - terrainH);
+
+            // Top face
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(TILE_WIDTH / 2, TILE_HEIGHT / 2);
+            ctx.lineTo(0, TILE_HEIGHT);
+            ctx.lineTo(-TILE_WIDTH / 2, TILE_HEIGHT / 2);
+            ctx.closePath();
+            ctx.fill();
+
+            // Left face (darker)
+            ctx.fillStyle = shadeColor(color, -20);
+            ctx.beginPath();
+            ctx.moveTo(-TILE_WIDTH / 2, TILE_HEIGHT / 2);
+            ctx.lineTo(0, TILE_HEIGHT);
+            ctx.lineTo(0, TILE_HEIGHT + 10);
+            ctx.lineTo(-TILE_WIDTH / 2, TILE_HEIGHT / 2 + 10);
+            ctx.closePath();
+            ctx.fill();
+
+            // Right face (darkest)
+            ctx.fillStyle = shadeColor(color, -40);
+            ctx.beginPath();
+            ctx.moveTo(TILE_WIDTH / 2, TILE_HEIGHT / 2);
+            ctx.lineTo(0, TILE_HEIGHT);
+            ctx.lineTo(0, TILE_HEIGHT + 10);
+            ctx.lineTo(TILE_WIDTH / 2, TILE_HEIGHT / 2 + 10);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // Helper to shade colors
+        function shadeColor(color, percent) {
+            const num = parseInt(color.replace('#', ''), 16);
+            const amt = Math.round(2.55 * percent);
+            const R = Math.max(0, Math.min(255, (num >> 16) + amt));
+            const G = Math.max(0, Math.min(255, ((num >> 8) & 0x00FF) + amt));
+            const B = Math.max(0, Math.min(255, (num & 0x0000FF) + amt));
+            return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
+        }
+
+        // Draw the mountain/terrain
+        function drawTerrain() {
+            // Sky gradient based on time
+            const timeOfDay = (gameTime % 1200) / 1200;
+            let skyTop, skyBottom;
+
+            if (timeOfDay < 0.25) { // Morning
+                skyTop = '#87CEEB';
+                skyBottom = '#E0F6FF';
+            } else if (timeOfDay < 0.5) { // Midday
+                skyTop = '#4A90D9';
+                skyBottom = '#87CEEB';
+            } else if (timeOfDay < 0.75) { // Evening
+                skyTop = '#FF7F50';
+                skyBottom = '#FFB6C1';
+            } else { // Night
+                skyTop = '#1a1a3e';
+                skyBottom = '#2d2d5a';
+            }
+
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, skyTop);
+            gradient.addColorStop(1, skyBottom);
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw distant mountains
+            ctx.fillStyle = '#b8c6db';
+            ctx.beginPath();
+            ctx.moveTo(0, 150);
+            for (let x = 0; x <= canvas.width; x += 100) {
+                ctx.lineTo(x, 100 + Math.sin(x * 0.01) * 50 + Math.random() * 10);
+            }
+            ctx.lineTo(canvas.width, 200);
+            ctx.lineTo(0, 200);
+            ctx.closePath();
+            ctx.fill();
+
+            // Draw grid tiles
+            for (let gy = 0; gy < GRID_HEIGHT; gy++) {
+                for (let gx = 0; gx < GRID_WIDTH; gx++) {
+                    // Vary snow color slightly
+                    const variation = Math.sin(gx * 0.5 + gy * 0.3) * 10;
+                    const baseColor = 230 + variation;
+                    const snowColor = `rgb(${baseColor}, ${baseColor + 5}, ${baseColor + 10})`;
+                    drawTile(gx, gy, snowColor);
+                }
+            }
+        }
+
+        // Draw a building
+        function drawBuilding(building) {
+            const def = BUILDINGS[building.type];
+            const pos = gridToScreen(building.gx, building.gy);
+            const terrainH = getTerrainHeight(building.gx, building.gy);
+            const time = gameTime * 0.05;
+
+            ctx.save();
+            ctx.translate(pos.x, pos.y - terrainH);
+
+            // Shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.15)';
+            ctx.beginPath();
+            ctx.ellipse(0, TILE_HEIGHT + 5, TILE_WIDTH * def.width * 0.5, TILE_HEIGHT * 0.4, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw based on building type
+            switch(building.type) {
+                // Lifts
+                case 'chairlift': drawChairlift(time); break;
+                case 'gondola': drawGondola(time); break;
+                case 'magicCarpet': drawMagicCarpet(time); break;
+                case 'tbar': drawTBar(time); break;
+                case 'helicopter': drawHelipad(time); break;
+                // Slopes
+                case 'greenSlope': drawSlope('#4CAF50', 'EASY'); break;
+                case 'blueSlope': drawSlope('#2196F3', 'MED'); break;
+                case 'blackSlope': drawSlope('#1a1a1a', 'HARD'); break;
+                case 'doubleBlack': drawSlope('#8B0000', '💀'); break;
+                case 'halfpipe': drawHalfpipe(); break;
+                case 'skiJump': drawSkiJump(); break;
+                case 'terrainPark': drawTerrainPark(); break;
+                case 'iceRink': drawIceRink(time); break;
+                case 'tubingHill': drawTubingHill(time); break;
+                // Buildings
+                case 'lodge': drawLodge(time); break;
+                case 'restaurant': drawRestaurant(time); break;
+                case 'rentalShop': drawRentalShop(); break;
+                case 'hotel': drawHotel(time); break;
+                case 'cabin': drawCabin(time); break;
+                case 'hotChocolate': drawHotChocolateStand(time); break;
+                case 'skiSchool': drawSkiSchool(); break;
+                case 'spa': drawSpa(time); break;
+                case 'giftShop': drawGiftShop(); break;
+                case 'bakery': drawBakery(time); break;
+                case 'pizzeria': drawPizzeria(time); break;
+                case 'bar': drawBar(time); break;
+                case 'cinema': drawCinema(time); break;
+                case 'arcade': drawArcade(time); break;
+                case 'firstAid': drawFirstAid(); break;
+                case 'ticketBooth': drawTicketBooth(); break;
+                case 'snowmobile': drawSnowmobileRental(); break;
+                case 'photoSpot': drawPhotoBooth(); break;
+                case 'grandHotel': drawGrandHotel(time); break;
+                case 'clockTower': drawClockTower(time); break;
+                case 'iceCreamShop': drawIceCreamShop(); break;
+                case 'sushiBar': drawSushiBar(time); break;
+                case 'ramenShop': drawRamenShop(time); break;
+                // Decorations
+                case 'pineTree': drawPineTree(); break;
+                case 'snowman': drawSnowmanDecor(); break;
+                case 'bench': drawBench(); break;
+                case 'flag': drawFlag(time); break;
+                case 'lamp': drawLamp(time); break;
+                case 'fountain': drawFountain(time); break;
+                case 'igloo': drawIgloo(); break;
+                case 'firePit': drawFirePit(time); break;
+                case 'hotTub': drawHotTub(time); break;
+                case 'statue': drawIceStatue(); break;
+                case 'archway': drawSnowArch(); break;
+                case 'treeCluster': drawForest(); break;
+                case 'rockFormation': drawRocks(); break;
+                case 'christmasTree': drawChristmasTree(time); break;
+                case 'skiRack': drawSkiRack(); break;
+                case 'snowCannon': drawSnowCannon(time); break;
+                case 'observation': drawObservationTower(); break;
+                case 'playground': drawPlayground(); break;
+                case 'reindeer': drawReindeerDecor(); break;
+                case 'sleigh': drawSantaSleigh(); break;
+                default: drawGenericBuilding(def); break;
+            }
+
+            ctx.restore();
+        }
+
+        // Chairlift with moving chairs
+        function drawChairlift(time) {
+            // Poles
+            ctx.fillStyle = '#5D6D7E';
+            ctx.fillRect(-3, -80, 6, 85);
+            ctx.fillRect(-25, -60, 6, 65);
+
+            // Pole caps
+            ctx.fillStyle = '#3498DB';
+            ctx.beginPath();
+            ctx.arc(0, -80, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Cable
+            ctx.strokeStyle = '#2C3E50';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(-40, -75);
+            ctx.lineTo(40, -75);
+            ctx.stroke();
+
+            // Moving chairs
+            for (let i = 0; i < 3; i++) {
+                const chairX = ((time * 20 + i * 50) % 100) - 50;
+                ctx.save();
+                ctx.translate(chairX, -70);
+
+                // Chair cable
+                ctx.strokeStyle = '#5D6D7E';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(0, -5);
+                ctx.lineTo(0, 8);
+                ctx.stroke();
+
+                // Chair seat
+                ctx.fillStyle = '#E74C3C';
+                ctx.fillRect(-8, 8, 16, 4);
+                ctx.fillRect(-10, 4, 20, 6);
+
+                // Back rest
+                ctx.fillStyle = '#C0392B';
+                ctx.fillRect(-8, -2, 16, 8);
+
+                // Tiny person on chair
+                ctx.fillStyle = '#3498DB';
+                ctx.beginPath();
+                ctx.arc(0, 2, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#FFEAA7';
+                ctx.beginPath();
+                ctx.arc(0, -3, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        // Gondola with enclosed cabins
+        function drawGondola(time) {
+            // Large tower
+            ctx.fillStyle = '#5D6D7E';
+            ctx.beginPath();
+            ctx.moveTo(-8, 5);
+            ctx.lineTo(-5, -100);
+            ctx.lineTo(5, -100);
+            ctx.lineTo(8, 5);
+            ctx.closePath();
+            ctx.fill();
+
+            // Tower top
+            ctx.fillStyle = '#3498DB';
+            ctx.fillRect(-12, -105, 24, 10);
+
+            // Cable
+            ctx.strokeStyle = '#1a1a1a';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(-60, -95);
+            ctx.lineTo(60, -95);
+            ctx.stroke();
+
+            // Gondola cabins
+            for (let i = 0; i < 2; i++) {
+                const cabinX = ((time * 15 + i * 80) % 140) - 70;
+                ctx.save();
+                ctx.translate(cabinX, -85);
+
+                // Cabin connector
+                ctx.fillStyle = '#5D6D7E';
+                ctx.fillRect(-2, -10, 4, 12);
+
+                // Cabin body
+                ctx.fillStyle = '#E74C3C';
+                ctx.beginPath();
+                ctx.roundRect(-12, 0, 24, 20, 4);
+                ctx.fill();
+
+                // Windows
+                ctx.fillStyle = '#85C1E9';
+                ctx.fillRect(-9, 3, 7, 10);
+                ctx.fillRect(2, 3, 7, 10);
+
+                // People silhouettes in windows
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.beginPath();
+                ctx.arc(-5, 8, 3, 0, Math.PI * 2);
+                ctx.arc(6, 8, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        // Ski slope marker
+        function drawSlope(color, label) {
+            // Trail poles
+            ctx.fillStyle = '#FF6B35';
+            ctx.fillRect(-25, -40, 4, 45);
+            ctx.fillRect(25, -40, 4, 45);
+
+            // Trail banner between poles
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(-23, -35);
+            ctx.lineTo(27, -35);
+            ctx.lineTo(27, -20);
+            ctx.lineTo(-23, -20);
+            ctx.closePath();
+            ctx.fill();
+
+            // Label
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(label, 2, -24);
+
+            // Gate poles
+            ctx.fillStyle = color;
+            for (let i = 0; i < 3; i++) {
+                ctx.fillRect(-15 + i * 15, -15, 3, 20);
+            }
+
+            // Snow grooves (trail marks)
+            ctx.strokeStyle = 'rgba(200,210,220,0.5)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 4; i++) {
+                ctx.beginPath();
+                ctx.moveTo(-20 + i * 12, 5);
+                ctx.lineTo(-20 + i * 12, 20);
+                ctx.stroke();
+            }
+        }
+
+        // Cozy lodge with windows
+        function drawLodge(time) {
+            // Base
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(-35, -30, 70, 40);
+
+            // Front wall
+            ctx.fillStyle = '#A0522D';
+            ctx.fillRect(-35, -30, 70, 35);
+
+            // Roof
+            ctx.fillStyle = '#5D4037';
+            ctx.beginPath();
+            ctx.moveTo(-40, -30);
+            ctx.lineTo(0, -60);
+            ctx.lineTo(40, -30);
+            ctx.closePath();
+            ctx.fill();
+
+            // Snow on roof
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.moveTo(-38, -32);
+            ctx.lineTo(0, -55);
+            ctx.lineTo(38, -32);
+            ctx.lineTo(30, -32);
+            ctx.lineTo(0, -50);
+            ctx.lineTo(-30, -32);
+            ctx.closePath();
+            ctx.fill();
+
+            // Windows with warm glow
+            const glow = Math.sin(time) * 0.2 + 0.8;
+            ctx.fillStyle = `rgba(255, 200, 100, ${glow})`;
+            ctx.fillRect(-25, -20, 15, 12);
+            ctx.fillRect(10, -20, 15, 12);
+
+            // Window frames
+            ctx.strokeStyle = '#5D4037';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(-25, -20, 15, 12);
+            ctx.strokeRect(10, -20, 15, 12);
+
+            // Window cross bars
+            ctx.beginPath();
+            ctx.moveTo(-17.5, -20);
+            ctx.lineTo(-17.5, -8);
+            ctx.moveTo(-25, -14);
+            ctx.lineTo(-10, -14);
+            ctx.moveTo(17.5, -20);
+            ctx.lineTo(17.5, -8);
+            ctx.moveTo(10, -14);
+            ctx.lineTo(25, -14);
+            ctx.stroke();
+
+            // People silhouettes in windows
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.beginPath();
+            ctx.arc(-20, -12, 4, 0, Math.PI * 2);
+            ctx.arc(15, -12, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Door
+            ctx.fillStyle = '#4A2810';
+            ctx.fillRect(-6, -15, 12, 20);
+            ctx.fillStyle = '#D4AF37';
+            ctx.beginPath();
+            ctx.arc(3, -5, 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Chimney
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(20, -55, 10, 20);
+
+            // Smoke
+            for (let i = 0; i < 3; i++) {
+                const smokeY = -60 - i * 10 - (time % 20);
+                const smokeX = 25 + Math.sin(time + i) * 3;
+                ctx.fillStyle = `rgba(200,200,200,${0.5 - i * 0.15})`;
+                ctx.beginPath();
+                ctx.arc(smokeX, smokeY, 5 - i, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Restaurant with visible tables
+        function drawRestaurant(time) {
+            // Building base
+            ctx.fillStyle = '#D4A574';
+            ctx.fillRect(-40, -35, 80, 45);
+
+            // Large front window
+            const glow = Math.sin(time) * 0.15 + 0.85;
+            ctx.fillStyle = `rgba(255, 220, 150, ${glow})`;
+            ctx.fillRect(-35, -28, 50, 25);
+
+            // Window frame
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(-35, -28, 50, 25);
+
+            // Tables visible through window
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(-30, -10, 12, 2);
+            ctx.fillRect(-5, -10, 12, 2);
+
+            // People at tables
+            ctx.fillStyle = '#E74C3C';
+            ctx.beginPath();
+            ctx.arc(-24, -15, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#3498DB';
+            ctx.beginPath();
+            ctx.arc(1, -15, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#FFEAA7';
+            ctx.beginPath();
+            ctx.arc(-24, -20, 3, 0, Math.PI * 2);
+            ctx.arc(1, -20, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Food on tables
+            ctx.fillStyle = '#E67E22';
+            ctx.beginPath();
+            ctx.arc(-22, -12, 2, 0, Math.PI * 2);
+            ctx.arc(4, -12, 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Side door
+            ctx.fillStyle = '#6D4C41';
+            ctx.fillRect(20, -20, 15, 25);
+
+            // Sign
+            ctx.fillStyle = '#C0392B';
+            ctx.fillRect(-15, -50, 30, 15);
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 8px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('RESTAURANT', 0, -40);
+
+            // Roof with overhang
+            ctx.fillStyle = '#5D4037';
+            ctx.beginPath();
+            ctx.moveTo(-45, -35);
+            ctx.lineTo(0, -60);
+            ctx.lineTo(45, -35);
+            ctx.closePath();
+            ctx.fill();
+
+            // Snow on roof
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.moveTo(-42, -37);
+            ctx.lineTo(0, -55);
+            ctx.lineTo(42, -37);
+            ctx.lineTo(35, -38);
+            ctx.lineTo(0, -50);
+            ctx.lineTo(-35, -38);
+            ctx.closePath();
+            ctx.fill();
+
+            // Outdoor seating with umbrella
+            ctx.fillStyle = '#E74C3C';
+            ctx.beginPath();
+            ctx.moveTo(-50, -15);
+            ctx.lineTo(-35, -30);
+            ctx.lineTo(-20, -15);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = '#5D6D7E';
+            ctx.fillRect(-36, -15, 2, 20);
+
+            // Person at outdoor table
+            ctx.fillStyle = '#2ECC71';
+            ctx.beginPath();
+            ctx.arc(-35, 0, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#FFEAA7';
+            ctx.beginPath();
+            ctx.arc(-35, -5, 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Rental shop with skis outside
+        function drawRentalShop() {
+            // Building
+            ctx.fillStyle = '#5DADE2';
+            ctx.fillRect(-30, -25, 60, 30);
+
+            // Roof
+            ctx.fillStyle = '#2C3E50';
+            ctx.fillRect(-35, -30, 70, 8);
+
+            // Snow on roof
+            ctx.fillStyle = 'white';
+            ctx.fillRect(-33, -32, 66, 4);
+
+            // Window
+            ctx.fillStyle = '#AED6F1';
+            ctx.fillRect(-20, -18, 25, 15);
+            ctx.strokeStyle = '#2C3E50';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(-20, -18, 25, 15);
+
+            // Door
+            ctx.fillStyle = '#1A5276';
+            ctx.fillRect(10, -18, 15, 22);
+
+            // Sign
+            ctx.fillStyle = '#F39C12';
+            ctx.fillRect(-25, -42, 50, 12);
+            ctx.fillStyle = '#2C3E50';
+            ctx.font = 'bold 8px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('SKI RENTAL', 0, -33);
+
+            // Skis lined up outside
+            const skiColors = ['#E74C3C', '#3498DB', '#2ECC71', '#9B59B6', '#F39C12'];
+            for (let i = 0; i < 5; i++) {
+                ctx.fillStyle = skiColors[i];
+                ctx.save();
+                ctx.translate(-35 + i * 8, 5);
+                ctx.rotate(-0.2);
+                ctx.fillRect(0, -30, 3, 35);
+                ctx.restore();
+            }
+
+            // Poles
+            ctx.fillStyle = '#5D6D7E';
+            for (let i = 0; i < 3; i++) {
+                ctx.fillRect(25 + i * 5, -20, 2, 25);
+            }
+        }
+
+        // Multi-story hotel
+        function drawHotel(time) {
+            // Main building
+            ctx.fillStyle = '#ECF0F1';
+            ctx.fillRect(-50, -80, 100, 90);
+
+            // Side shading
+            ctx.fillStyle = '#BDC3C7';
+            ctx.beginPath();
+            ctx.moveTo(50, -80);
+            ctx.lineTo(50, 10);
+            ctx.lineTo(60, 0);
+            ctx.lineTo(60, -70);
+            ctx.closePath();
+            ctx.fill();
+
+            // Roof
+            ctx.fillStyle = '#7F8C8D';
+            ctx.fillRect(-55, -85, 110, 8);
+
+            // Windows (3 floors)
+            for (let floor = 0; floor < 3; floor++) {
+                for (let w = 0; w < 4; w++) {
+                    const winY = -70 + floor * 25;
+                    const winX = -40 + w * 25;
+                    const lit = Math.sin(time + floor + w) > 0.3;
+                    ctx.fillStyle = lit ? 'rgba(255, 220, 150, 0.9)' : 'rgba(100, 130, 160, 0.8)';
+                    ctx.fillRect(winX, winY, 18, 15);
+                    ctx.strokeStyle = '#5D6D7E';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(winX, winY, 18, 15);
+
+                    // Curtains
+                    if (lit) {
+                        ctx.fillStyle = 'rgba(139, 69, 19, 0.3)';
+                        ctx.fillRect(winX, winY, 4, 15);
+                        ctx.fillRect(winX + 14, winY, 4, 15);
+                    }
+
+                    // Person silhouette in some windows
+                    if (lit && Math.sin(time * 0.5 + floor * 2 + w) > 0.5) {
+                        ctx.fillStyle = 'rgba(0,0,0,0.25)';
+                        ctx.beginPath();
+                        ctx.arc(winX + 9, winY + 10, 4, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            }
+
+            // Entrance
+            ctx.fillStyle = '#C0392B';
+            ctx.fillRect(-15, -15, 30, 25);
+            ctx.fillStyle = '#922B21';
+            ctx.fillRect(-12, -12, 24, 22);
+
+            // Glass doors
+            ctx.fillStyle = '#85C1E9';
+            ctx.fillRect(-10, -10, 9, 18);
+            ctx.fillRect(1, -10, 9, 18);
+
+            // Awning
+            ctx.fillStyle = '#C0392B';
+            ctx.beginPath();
+            ctx.moveTo(-25, -15);
+            ctx.lineTo(0, -25);
+            ctx.lineTo(25, -15);
+            ctx.closePath();
+            ctx.fill();
+
+            // Hotel sign
+            ctx.fillStyle = '#C0392B';
+            ctx.fillRect(-20, -95, 40, 12);
+            ctx.fillStyle = '#F1C40F';
+            ctx.font = 'bold 9px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('HOTEL', 0, -86);
+
+            // Doorman
+            ctx.fillStyle = '#C0392B';
+            ctx.fillRect(18, -8, 8, 15);
+            ctx.fillStyle = '#FFEAA7';
+            ctx.beginPath();
+            ctx.arc(22, -12, 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Cozy log cabin
+        function drawCabin(time) {
+            // Log walls
+            ctx.fillStyle = '#8B4513';
+            for (let i = 0; i < 5; i++) {
+                ctx.fillStyle = i % 2 === 0 ? '#8B4513' : '#A0522D';
+                ctx.fillRect(-28, -25 + i * 6, 56, 6);
+            }
+
+            // Roof
+            ctx.fillStyle = '#5D4037';
+            ctx.beginPath();
+            ctx.moveTo(-35, -25);
+            ctx.lineTo(0, -50);
+            ctx.lineTo(35, -25);
+            ctx.closePath();
+            ctx.fill();
+
+            // Snow on roof
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.moveTo(-32, -27);
+            ctx.lineTo(0, -45);
+            ctx.lineTo(32, -27);
+            ctx.lineTo(25, -27);
+            ctx.lineTo(0, -40);
+            ctx.lineTo(-25, -27);
+            ctx.closePath();
+            ctx.fill();
+
+            // Window with warm glow
+            const glow = Math.sin(time) * 0.2 + 0.8;
+            ctx.fillStyle = `rgba(255, 180, 80, ${glow})`;
+            ctx.fillRect(-18, -18, 14, 12);
+            ctx.strokeStyle = '#5D4037';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(-18, -18, 14, 12);
+            ctx.beginPath();
+            ctx.moveTo(-11, -18);
+            ctx.lineTo(-11, -6);
+            ctx.moveTo(-18, -12);
+            ctx.lineTo(-4, -12);
+            ctx.stroke();
+
+            // Person in window
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.beginPath();
+            ctx.arc(-11, -10, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Door
+            ctx.fillStyle = '#6D4C41';
+            ctx.fillRect(5, -18, 12, 22);
+            ctx.fillStyle = '#D4AF37';
+            ctx.beginPath();
+            ctx.arc(14, -7, 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Chimney with smoke
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(-25, -55, 8, 15);
+
+            // Smoke puffs
+            for (let i = 0; i < 4; i++) {
+                const smokeY = -60 - i * 8 - (time % 15);
+                const smokeX = -21 + Math.sin(time * 0.8 + i) * 4;
+                ctx.fillStyle = `rgba(180,180,180,${0.6 - i * 0.15})`;
+                ctx.beginPath();
+                ctx.arc(smokeX, smokeY, 6 - i, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Woodpile outside
+            ctx.fillStyle = '#6D4C41';
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 2; j++) {
+                    ctx.beginPath();
+                    ctx.arc(30 + i * 6, 2 - j * 5, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        // Hot chocolate stand with steam
+        function drawHotChocolateStand(time) {
+            // Cart/stand
+            ctx.fillStyle = '#C0392B';
+            ctx.fillRect(-20, -20, 40, 25);
+
+            // Counter
+            ctx.fillStyle = '#922B21';
+            ctx.fillRect(-22, -22, 44, 5);
+
+            // Roof
+            ctx.fillStyle = '#E74C3C';
+            ctx.beginPath();
+            ctx.moveTo(-25, -22);
+            ctx.lineTo(0, -40);
+            ctx.lineTo(25, -22);
+            ctx.closePath();
+            ctx.fill();
+
+            // Pole
+            ctx.fillStyle = '#7B241C';
+            ctx.fillRect(-2, -38, 4, 45);
+
+            // Sign
+            ctx.fillStyle = '#F5B041';
+            ctx.beginPath();
+            ctx.arc(0, -45, 12, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#6D4C41';
+            ctx.font = 'bold 7px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('HOT', 0, -47);
+            ctx.fillText('COCOA', 0, -40);
+
+            // Cups on counter
+            for (let i = 0; i < 3; i++) {
+                ctx.fillStyle = 'white';
+                ctx.fillRect(-15 + i * 12, -28, 8, 8);
+                ctx.fillStyle = '#6D4C41';
+                ctx.fillRect(-14 + i * 12, -27, 6, 5);
+            }
+
+            // Steam rising
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 2; j++) {
+                    const steamY = -32 - j * 6 - (time % 10);
+                    const steamX = -11 + i * 12 + Math.sin(time + i + j) * 2;
+                    ctx.fillStyle = `rgba(255,255,255,${0.5 - j * 0.2})`;
+                    ctx.beginPath();
+                    ctx.arc(steamX, steamY, 3 - j, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            // Vendor
+            ctx.fillStyle = '#C0392B';
+            ctx.fillRect(-5, -15, 10, 12);
+            ctx.fillStyle = '#FFEAA7';
+            ctx.beginPath();
+            ctx.arc(0, -18, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(0, -22, 6, Math.PI, 0);
+            ctx.fill();
+        }
+
+        // Ski school with instructor and students
+        function drawSkiSchool() {
+            // Building
+            ctx.fillStyle = '#3498DB';
+            ctx.fillRect(-35, -35, 70, 45);
+
+            // Roof
+            ctx.fillStyle = '#2C3E50';
+            ctx.beginPath();
+            ctx.moveTo(-40, -35);
+            ctx.lineTo(0, -55);
+            ctx.lineTo(40, -35);
+            ctx.closePath();
+            ctx.fill();
+
+            // Snow on roof
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.moveTo(-37, -37);
+            ctx.lineTo(0, -50);
+            ctx.lineTo(37, -37);
+            ctx.lineTo(30, -37);
+            ctx.lineTo(0, -45);
+            ctx.lineTo(-30, -37);
+            ctx.closePath();
+            ctx.fill();
+
+            // Windows
+            ctx.fillStyle = '#AED6F1';
+            ctx.fillRect(-28, -25, 20, 15);
+            ctx.fillRect(8, -25, 20, 15);
+            ctx.strokeStyle = '#2C3E50';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(-28, -25, 20, 15);
+            ctx.strokeRect(8, -25, 20, 15);
+
+            // Door
+            ctx.fillStyle = '#1A5276';
+            ctx.fillRect(-8, -25, 16, 30);
+
+            // Sign
+            ctx.fillStyle = '#F39C12';
+            ctx.fillRect(-25, -65, 50, 12);
+            ctx.fillStyle = '#2C3E50';
+            ctx.font = 'bold 8px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('SKI SCHOOL', 0, -56);
+
+            // Instructor outside (red jacket)
+            ctx.fillStyle = '#E74C3C';
+            ctx.fillRect(-45, -8, 10, 15);
+            ctx.fillStyle = '#FFEAA7';
+            ctx.beginPath();
+            ctx.arc(-40, -12, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Small students in a row
+            const studentColors = ['#2ECC71', '#9B59B6', '#F39C12'];
+            for (let i = 0; i < 3; i++) {
+                ctx.fillStyle = studentColors[i];
+                ctx.fillRect(-30 + i * 15, -3, 7, 10);
+                ctx.fillStyle = '#FFEAA7';
+                ctx.beginPath();
+                ctx.arc(-26.5 + i * 15, -6, 4, 0, Math.PI * 2);
+                ctx.fill();
+                // Tiny skis
+                ctx.fillStyle = '#E74C3C';
+                ctx.fillRect(-29 + i * 15, 7, 2, 8);
+                ctx.fillRect(-25 + i * 15, 7, 2, 8);
+            }
+        }
+
+        // Spa with steam effects
+        function drawSpa(time) {
+            // Building
+            ctx.fillStyle = '#D5DBDB';
+            ctx.fillRect(-35, -40, 70, 50);
+
+            // Side
+            ctx.fillStyle = '#AEB6BF';
+            ctx.beginPath();
+            ctx.moveTo(35, -40);
+            ctx.lineTo(35, 10);
+            ctx.lineTo(45, 0);
+            ctx.lineTo(45, -30);
+            ctx.closePath();
+            ctx.fill();
+
+            // Domed roof
+            ctx.fillStyle = '#5DADE2';
+            ctx.beginPath();
+            ctx.arc(0, -40, 35, Math.PI, 0);
+            ctx.closePath();
+            ctx.fill();
+
+            // Windows
+            ctx.fillStyle = '#AED6F1';
+            ctx.fillRect(-25, -30, 20, 18);
+            ctx.fillRect(5, -30, 20, 18);
+
+            // Door
+            ctx.fillStyle = '#2C3E50';
+            ctx.fillRect(-8, -25, 16, 35);
+            ctx.fillStyle = '#85C1E9';
+            ctx.fillRect(-6, -22, 12, 28);
+
+            // Sign
+            ctx.fillStyle = '#5DADE2';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('SPA', 0, -50);
+
+            // Steam rising from building
+            for (let i = 0; i < 5; i++) {
+                const steamY = -70 - i * 10 - (time % 20);
+                const steamX = -20 + i * 10 + Math.sin(time * 0.5 + i) * 5;
+                ctx.fillStyle = `rgba(255,255,255,${0.4 - i * 0.08})`;
+                ctx.beginPath();
+                ctx.arc(steamX, steamY, 8 - i, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Person in robe peeking out
+            ctx.fillStyle = 'white';
+            ctx.fillRect(25, -15, 10, 18);
+            ctx.fillStyle = '#FFEAA7';
+            ctx.beginPath();
+            ctx.arc(30, -18, 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Detailed pine tree
+        function drawPineTree() {
+            // Trunk
+            ctx.fillStyle = '#5D4037';
+            ctx.fillRect(-4, -5, 8, 15);
+
+            // Tree layers
+            const layers = [
+                { y: -45, w: 8 },
+                { y: -35, w: 18 },
+                { y: -22, w: 28 },
+                { y: -8, w: 35 }
+            ];
+
+            layers.forEach((layer, i) => {
+                ctx.fillStyle = '#2E7D32';
+                ctx.beginPath();
+                ctx.moveTo(0, layer.y);
+                ctx.lineTo(-layer.w, layer.y + 18);
+                ctx.lineTo(layer.w, layer.y + 18);
+                ctx.closePath();
+                ctx.fill();
+
+                // Snow on branches
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.moveTo(0, layer.y);
+                ctx.lineTo(-layer.w * 0.6, layer.y + 8);
+                ctx.lineTo(layer.w * 0.6, layer.y + 8);
+                ctx.closePath();
+                ctx.fill();
+            });
+        }
+
+        // Cute detailed snowman
+        function drawSnowmanDecor() {
+            // Shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.1)';
+            ctx.beginPath();
+            ctx.ellipse(0, 8, 15, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Body spheres
+            ctx.fillStyle = 'white';
+            ctx.strokeStyle = '#BDC3C7';
+            ctx.lineWidth = 1;
+
+            ctx.beginPath();
+            ctx.arc(0, 0, 14, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(0, -22, 11, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(0, -40, 9, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Top hat
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(-10, -52, 20, 5);
+            ctx.fillRect(-7, -65, 14, 15);
+            ctx.fillStyle = '#C0392B';
+            ctx.fillRect(-7, -55, 14, 3);
+
+            // Carrot nose
+            ctx.fillStyle = '#E67E22';
+            ctx.beginPath();
+            ctx.moveTo(0, -40);
+            ctx.lineTo(12, -38);
+            ctx.lineTo(0, -36);
+            ctx.closePath();
+            ctx.fill();
+
+            // Coal eyes
+            ctx.fillStyle = '#1a1a1a';
+            ctx.beginPath();
+            ctx.arc(-4, -44, 2, 0, Math.PI * 2);
+            ctx.arc(4, -44, 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Coal mouth
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                ctx.arc(-6 + i * 3, -34 + Math.abs(i - 2) * 0.5, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Coal buttons
+            ctx.beginPath();
+            ctx.arc(0, -25, 2, 0, Math.PI * 2);
+            ctx.arc(0, -18, 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Stick arms
+            ctx.strokeStyle = '#5D4037';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(-11, -22);
+            ctx.lineTo(-25, -30);
+            ctx.lineTo(-30, -28);
+            ctx.moveTo(-25, -30);
+            ctx.lineTo(-28, -35);
+            ctx.moveTo(11, -22);
+            ctx.lineTo(25, -30);
+            ctx.lineTo(30, -28);
+            ctx.moveTo(25, -30);
+            ctx.lineTo(28, -35);
+            ctx.stroke();
+
+            // Scarf
+            ctx.fillStyle = '#C0392B';
+            ctx.beginPath();
+            ctx.ellipse(0, -30, 12, 4, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillRect(8, -32, 5, 15);
+        }
+
+        // Wooden bench
+        function drawBench() {
+            // Legs
+            ctx.fillStyle = '#5D4037';
+            ctx.fillRect(-18, -5, 4, 15);
+            ctx.fillRect(14, -5, 4, 15);
+
+            // Seat
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(-22, -10, 44, 6);
+
+            // Back rest
+            ctx.fillStyle = '#6D4C41';
+            ctx.fillRect(-20, -25, 40, 4);
+            ctx.fillRect(-20, -18, 40, 4);
+
+            // Snow on seat
+            ctx.fillStyle = 'white';
+            ctx.fillRect(-20, -12, 40, 3);
+
+            // Occasional bird on bench
+            if (Math.sin(gameTime * 0.02) > 0.7) {
+                ctx.fillStyle = '#E74C3C';
+                ctx.beginPath();
+                ctx.ellipse(-5, -18, 5, 4, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#C0392B';
+                ctx.beginPath();
+                ctx.arc(-2, -20, 3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#F39C12';
+                ctx.beginPath();
+                ctx.moveTo(1, -20);
+                ctx.lineTo(5, -19);
+                ctx.lineTo(1, -18);
+                ctx.closePath();
+                ctx.fill();
+            }
+        }
+
+        // Waving flag
+        function drawFlag(time) {
+            // Pole
+            ctx.fillStyle = '#5D6D7E';
+            ctx.fillRect(-2, -50, 4, 55);
+
+            // Pole top
+            ctx.fillStyle = '#F1C40F';
+            ctx.beginPath();
+            ctx.arc(0, -50, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Waving flag
+            ctx.fillStyle = '#E74C3C';
+            ctx.beginPath();
+            const wave1 = Math.sin(time) * 3;
+            const wave2 = Math.sin(time + 1) * 3;
+            ctx.moveTo(2, -48);
+            ctx.quadraticCurveTo(15 + wave1, -45, 30, -43 + wave2);
+            ctx.lineTo(30, -30 + wave2);
+            ctx.quadraticCurveTo(15 + wave1, -32, 2, -35);
+            ctx.closePath();
+            ctx.fill();
+
+            // Flag design (star)
+            ctx.fillStyle = 'white';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('★', 16, -38);
+        }
+
+        // Street lamp with glow
+        function drawLamp(time) {
+            // Pole
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(-2, -45, 4, 50);
+
+            // Lamp arm
+            ctx.fillRect(-2, -45, 15, 3);
+
+            // Lamp housing
+            ctx.fillStyle = '#2C3E50';
+            ctx.beginPath();
+            ctx.moveTo(8, -45);
+            ctx.lineTo(5, -35);
+            ctx.lineTo(18, -35);
+            ctx.lineTo(15, -45);
+            ctx.closePath();
+            ctx.fill();
+
+            // Determine if lit based on time of day
+            const timeOfDay = (gameTime % 1200) / 1200;
+            const isNight = timeOfDay > 0.7 || timeOfDay < 0.2;
+
+            if (isNight) {
+                // Glow effect
+                const glowSize = 25 + Math.sin(time * 2) * 3;
+                const gradient = ctx.createRadialGradient(12, -30, 0, 12, -30, glowSize);
+                gradient.addColorStop(0, 'rgba(255, 220, 150, 0.8)');
+                gradient.addColorStop(0.5, 'rgba(255, 200, 100, 0.3)');
+                gradient.addColorStop(1, 'rgba(255, 180, 50, 0)');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(12, -30, glowSize, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Light bulb
+            ctx.fillStyle = isNight ? '#FFF3CD' : '#F7DC6F';
+            ctx.beginPath();
+            ctx.arc(12, -38, 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Ice fountain
+        function drawFountain(time) {
+            // Base
+            ctx.fillStyle = '#BDC3C7';
+            ctx.beginPath();
+            ctx.ellipse(0, 5, 30, 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#95A5A6';
+            ctx.beginPath();
+            ctx.ellipse(0, 5, 30, 12, 0, Math.PI * 0.1, Math.PI * 0.9);
+            ctx.fill();
+
+            // Water/ice basin
+            ctx.fillStyle = '#85C1E9';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 25, 10, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Center pillar
+            ctx.fillStyle = '#BDC3C7';
+            ctx.fillRect(-5, -30, 10, 32);
+
+            // Top bowl
+            ctx.fillStyle = '#95A5A6';
+            ctx.beginPath();
+            ctx.ellipse(0, -30, 12, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#85C1E9';
+            ctx.beginPath();
+            ctx.ellipse(0, -32, 10, 4, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Frozen water streams (icicle-like)
+            ctx.fillStyle = 'rgba(150, 200, 255, 0.7)';
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2;
+                const x = Math.cos(angle) * 8;
+                const wobble = Math.sin(time + i) * 2;
+                ctx.beginPath();
+                ctx.moveTo(x, -30);
+                ctx.quadraticCurveTo(x * 2 + wobble, -15, x * 2.5, 0);
+                ctx.quadraticCurveTo(x * 2 + wobble, -15, x * 0.8, -30);
+                ctx.fill();
+            }
+
+            // Water droplet particles
+            for (let i = 0; i < 4; i++) {
+                const dropY = -35 - ((time * 2 + i * 20) % 30);
+                const dropX = Math.sin(time + i * 2) * 5;
+                ctx.fillStyle = 'rgba(150, 200, 255, 0.6)';
+                ctx.beginPath();
+                ctx.arc(dropX, dropY, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Ice crystals
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            for (let i = 0; i < 3; i++) {
+                const crystalX = -15 + i * 15;
+                ctx.beginPath();
+                ctx.moveTo(crystalX, -2);
+                ctx.lineTo(crystalX - 3, 5);
+                ctx.lineTo(crystalX + 3, 5);
+                ctx.closePath();
+                ctx.fill();
+            }
+        }
+
+        // ============ NEW BUILDING DRAWINGS ============
+
+        // Magic carpet conveyor lift
+        function drawMagicCarpet(time) {
+            ctx.fillStyle = '#5D6D7E';
+            ctx.fillRect(-30, -5, 60, 8);
+            ctx.fillStyle = '#3498DB';
+            ctx.fillRect(-28, -3, 56, 4);
+            // Moving belt pattern
+            for (let i = 0; i < 6; i++) {
+                const beltX = ((time * 30 + i * 15) % 60) - 30;
+                ctx.fillStyle = '#2980B9';
+                ctx.fillRect(beltX, -2, 8, 2);
+            }
+            // Side rails
+            ctx.fillStyle = '#E74C3C';
+            ctx.fillRect(-32, -10, 4, 15);
+            ctx.fillRect(28, -10, 4, 15);
+            // Kids on carpet
+            ctx.fillStyle = '#2ECC71';
+            ctx.beginPath();
+            ctx.arc(-10, -10, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#FFEAA7';
+            ctx.beginPath();
+            ctx.arc(-10, -16, 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // T-Bar lift
+        function drawTBar(time) {
+            ctx.fillStyle = '#5D6D7E';
+            ctx.fillRect(-2, -60, 4, 65);
+            ctx.fillStyle = '#3498DB';
+            ctx.beginPath();
+            ctx.arc(0, -60, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#2C3E50';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(-30, -55);
+            ctx.lineTo(30, -55);
+            ctx.stroke();
+            // T-bar
+            const barY = ((time * 25) % 40) - 20;
+            ctx.fillStyle = '#E74C3C';
+            ctx.fillRect(-1, -50 + barY, 2, 15);
+            ctx.fillRect(-10, -35 + barY, 20, 3);
+        }
+
+        // Helipad
+        function drawHelipad(time) {
+            ctx.fillStyle = '#5D6D7E';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 35, 20, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#F1C40F';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 30, 17, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#5D6D7E';
+            ctx.font = 'bold 20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('H', 0, 7);
+            // Helicopter
+            ctx.fillStyle = '#E74C3C';
+            ctx.beginPath();
+            ctx.ellipse(0, -25, 18, 10, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#85C1E9';
+            ctx.beginPath();
+            ctx.ellipse(-5, -28, 6, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // Rotor
+            const rotorAngle = time * 5;
+            ctx.strokeStyle = '#2C3E50';
+            ctx.lineWidth = 3;
+            ctx.save();
+            ctx.translate(0, -30);
+            ctx.rotate(rotorAngle);
+            ctx.beginPath();
+            ctx.moveTo(-25, 0);
+            ctx.lineTo(25, 0);
+            ctx.stroke();
+            ctx.restore();
+            ctx.fillStyle = '#C0392B';
+            ctx.fillRect(15, -25, 20, 4);
+        }
+
+        // Halfpipe
+        function drawHalfpipe() {
+            ctx.fillStyle = '#AED6F1';
+            ctx.beginPath();
+            ctx.moveTo(-35, 5);
+            ctx.quadraticCurveTo(-35, -30, 0, -30);
+            ctx.quadraticCurveTo(35, -30, 35, 5);
+            ctx.lineTo(30, 5);
+            ctx.quadraticCurveTo(30, -20, 0, -20);
+            ctx.quadraticCurveTo(-30, -20, -30, 5);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = '#3498DB';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            // Snowboarder
+            ctx.fillStyle = '#9B59B6';
+            ctx.beginPath();
+            ctx.arc(10, -25, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#FFEAA7';
+            ctx.beginPath();
+            ctx.arc(10, -31, 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Ski Jump
+        function drawSkiJump() {
+            ctx.fillStyle = '#5DADE2';
+            ctx.beginPath();
+            ctx.moveTo(-20, 10);
+            ctx.lineTo(-15, -60);
+            ctx.lineTo(15, -60);
+            ctx.lineTo(20, 10);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = '#3498DB';
+            ctx.beginPath();
+            ctx.moveTo(-10, -55);
+            ctx.quadraticCurveTo(0, -70, 10, -55);
+            ctx.lineTo(8, -50);
+            ctx.quadraticCurveTo(0, -60, -8, -50);
+            ctx.closePath();
+            ctx.fill();
+            // Jumper in air
+            ctx.fillStyle = '#E74C3C';
+            ctx.save();
+            ctx.translate(25, -50);
+            ctx.rotate(-0.5);
+            ctx.fillRect(-3, -8, 6, 12);
+            ctx.fillStyle = '#FFEAA7';
+            ctx.beginPath();
+            ctx.arc(0, -12, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#2C3E50';
+            ctx.fillRect(-8, 4, 16, 2);
+            ctx.restore();
+        }
+
+        // Terrain Park
+        function drawTerrainPark() {
+            // Rails
+            ctx.fillStyle = '#F39C12';
+            ctx.fillRect(-40, -5, 30, 3);
+            ctx.fillRect(-38, -8, 2, 6);
+            ctx.fillRect(-12, -8, 2, 6);
+            // Box
+            ctx.fillStyle = '#3498DB';
+            ctx.fillRect(0, -15, 25, 18);
+            ctx.fillStyle = '#2980B9';
+            ctx.fillRect(0, -15, 25, 5);
+            // Kicker
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.moveTo(35, 5);
+            ctx.lineTo(35, -20);
+            ctx.quadraticCurveTo(50, -25, 55, -15);
+            ctx.lineTo(55, 5);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = '#BDC3C7';
+            ctx.stroke();
+            // Rider on rail
+            ctx.fillStyle = '#9B59B6';
+            ctx.beginPath();
+            ctx.arc(-25, -12, 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Ice Rink
+        function drawIceRink(time) {
+            ctx.fillStyle = '#85C1E9';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 45, 25, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#2980B9';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 40, 22, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#E74C3C';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 30, 15, 0, 0, Math.PI * 2);
+            ctx.stroke();
+            // Skaters
+            for (let i = 0; i < 3; i++) {
+                const angle = time * 0.5 + i * 2;
+                const sx = Math.cos(angle) * 20;
+                const sy = Math.sin(angle) * 10;
+                ctx.fillStyle = ['#E74C3C', '#3498DB', '#2ECC71'][i];
+                ctx.beginPath();
+                ctx.arc(sx, sy, 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Tubing Hill
+        function drawTubingHill(time) {
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.moveTo(-30, 10);
+            ctx.lineTo(-20, -40);
+            ctx.lineTo(20, -40);
+            ctx.lineTo(30, 10);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = '#BDC3C7';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            // Tubes sliding down
+            const tubeColors = ['#E74C3C', '#3498DB', '#F39C12'];
+            for (let i = 0; i < 3; i++) {
+                const tubeY = ((time * 20 + i * 30) % 60) - 40;
+                const tubeX = -15 + i * 15;
+                ctx.fillStyle = tubeColors[i];
+                ctx.beginPath();
+                ctx.ellipse(tubeX, tubeY, 8, 5, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#FFEAA7';
+                ctx.beginPath();
+                ctx.arc(tubeX, tubeY - 5, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Gift Shop
+        function drawGiftShop() {
+            ctx.fillStyle = '#9B59B6';
+            ctx.fillRect(-30, -30, 60, 40);
+            ctx.fillStyle = '#8E44AD';
+            ctx.beginPath();
+            ctx.moveTo(-35, -30);
+            ctx.lineTo(0, -50);
+            ctx.lineTo(35, -30);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.moveTo(-32, -32);
+            ctx.lineTo(0, -45);
+            ctx.lineTo(32, -32);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = '#AED6F1';
+            ctx.fillRect(-22, -22, 18, 15);
+            ctx.fillStyle = '#F39C12';
+            ctx.fillRect(5, -20, 20, 28);
+            ctx.fillStyle = '#E74C3C';
+            ctx.fillRect(-18, -55, 36, 12);
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 8px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('GIFTS', 0, -46);
+            // Gift boxes in window
+            ctx.fillStyle = '#E74C3C';
+            ctx.fillRect(-18, -15, 8, 8);
+            ctx.fillStyle = '#3498DB';
+            ctx.fillRect(-8, -12, 6, 5);
+        }
+
+        // Bakery
+        function drawBakery(time) {
+            ctx.fillStyle = '#F5B041';
+            ctx.fillRect(-30, -30, 60, 40);
+            ctx.fillStyle = '#E67E22';
+            ctx.beginPath();
+            ctx.moveTo(-35, -30);
+            ctx.lineTo(0, -50);
+            ctx.lineTo(35, -30);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = 'white';
+            ctx.fillRect(-20, -22, 25, 15);
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(10, -20, 15, 28);
+            // Baked goods in window
+            ctx.fillStyle = '#D4A574';
+            ctx.beginPath();
+            ctx.arc(-12, -15, 5, 0, Math.PI * 2);
+            ctx.arc(-3, -12, 4, 0, Math.PI * 2);
+            ctx.fill();
+            // Smoke from chimney
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(20, -55, 8, 15);
+            for (let i = 0; i < 2; i++) {
+                const smokeY = -60 - i * 8 - (time % 12);
+                ctx.fillStyle = `rgba(200,200,200,${0.5 - i * 0.2})`;
+                ctx.beginPath();
+                ctx.arc(24 + Math.sin(time + i) * 2, smokeY, 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.fillStyle = '#E67E22';
+            ctx.fillRect(-20, -58, 40, 10);
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 7px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('BAKERY', 0, -50);
+        }
+
+        // Pizzeria
+        function drawPizzeria(time) {
+            ctx.fillStyle = '#E74C3C';
+            ctx.fillRect(-30, -30, 60, 40);
+            ctx.fillStyle = '#C0392B';
+            ctx.beginPath();
+            ctx.moveTo(-35, -30);
+            ctx.lineTo(0, -50);
+            ctx.lineTo(35, -30);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = 'white';
+            ctx.fillRect(-20, -22, 25, 15);
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(10, -20, 15, 28);
+            // Pizza sign
+            ctx.fillStyle = '#F39C12';
+            ctx.beginPath();
+            ctx.moveTo(0, -65);
+            ctx.lineTo(-12, -52);
+            ctx.lineTo(12, -52);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = '#E74C3C';
+            ctx.beginPath();
+            ctx.arc(-3, -58, 2, 0, Math.PI * 2);
+            ctx.arc(4, -56, 2, 0, Math.PI * 2);
+            ctx.fill();
+            // Chef in window
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(-10, -12, 5, Math.PI, 0);
+            ctx.fill();
+            ctx.fillStyle = '#FFEAA7';
+            ctx.beginPath();
+            ctx.arc(-10, -14, 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Après-Ski Bar
+        function drawBar(time) {
+            ctx.fillStyle = '#6D4C41';
+            ctx.fillRect(-30, -30, 60, 40);
+            ctx.fillStyle = '#5D4037';
+            ctx.beginPath();
+            ctx.moveTo(-35, -30);
+            ctx.lineTo(0, -50);
+            ctx.lineTo(35, -30);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = 'white';
+            ctx.fillRect(-30, -33, 60, 5);
+            const glow = Math.sin(time) * 0.2 + 0.8;
+            ctx.fillStyle = `rgba(255, 180, 100, ${glow})`;
+            ctx.fillRect(-22, -22, 20, 15);
+            ctx.fillRect(5, -22, 20, 15);
+            ctx.fillStyle = '#4A2810';
+            ctx.fillRect(-5, -18, 10, 25);
+            // Beer mug sign
+            ctx.fillStyle = '#F39C12';
+            ctx.fillRect(-12, -62, 24, 15);
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 7px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('BAR', 0, -52);
+            // People silhouettes
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.beginPath();
+            ctx.arc(-12, -14, 4, 0, Math.PI * 2);
+            ctx.arc(15, -14, 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Cinema
+        function drawCinema(time) {
+            ctx.fillStyle = '#2C3E50';
+            ctx.fillRect(-45, -40, 90, 50);
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(-50, -45, 100, 8);
+            // Marquee lights
+            for (let i = 0; i < 10; i++) {
+                const lit = Math.sin(time * 2 + i) > 0;
+                ctx.fillStyle = lit ? '#F1C40F' : '#7F8C8D';
+                ctx.beginPath();
+                ctx.arc(-40 + i * 9, -42, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.fillStyle = '#E74C3C';
+            ctx.fillRect(-30, -35, 60, 15);
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('CINEMA', 0, -24);
+            ctx.fillStyle = '#C0392B';
+            ctx.fillRect(-10, -18, 20, 25);
+            ctx.fillStyle = '#85C1E9';
+            ctx.fillRect(-35, -15, 20, 18);
+            ctx.fillRect(15, -15, 20, 18);
+        }
+
+        // Arcade
+        function drawArcade(time) {
+            ctx.fillStyle = '#9B59B6';
+            ctx.fillRect(-30, -35, 60, 45);
+            ctx.fillStyle = '#8E44AD';
+            ctx.fillRect(-35, -40, 70, 8);
+            // Flashing sign
+            const flash = Math.floor(time * 3) % 3;
+            ctx.fillStyle = ['#E74C3C', '#F1C40F', '#3498DB'][flash];
+            ctx.fillRect(-25, -55, 50, 15);
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('ARCADE', 0, -43);
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(-22, -28, 18, 25);
+            ctx.fillRect(5, -28, 18, 25);
+            // Screen glow
+            ctx.fillStyle = `rgba(100, 200, 255, ${0.5 + Math.sin(time * 2) * 0.3})`;
+            ctx.fillRect(-20, -26, 14, 15);
+            ctx.fillStyle = `rgba(255, 100, 100, ${0.5 + Math.sin(time * 2 + 1) * 0.3})`;
+            ctx.fillRect(7, -26, 14, 15);
+        }
+
+        // First Aid
+        function drawFirstAid() {
+            ctx.fillStyle = 'white';
+            ctx.fillRect(-30, -35, 60, 45);
+            ctx.fillStyle = '#E74C3C';
+            ctx.beginPath();
+            ctx.moveTo(-35, -35);
+            ctx.lineTo(0, -55);
+            ctx.lineTo(35, -35);
+            ctx.closePath();
+            ctx.fill();
+            // Red cross
+            ctx.fillStyle = '#E74C3C';
+            ctx.fillRect(-8, -28, 16, 30);
+            ctx.fillRect(-18, -18, 36, 10);
+            ctx.fillStyle = '#C0392B';
+            ctx.fillRect(-5, -20, 10, 25);
+        }
+
+        // Ticket Booth
+        function drawTicketBooth() {
+            ctx.fillStyle = '#3498DB';
+            ctx.fillRect(-15, -25, 30, 30);
+            ctx.fillStyle = '#2980B9';
+            ctx.beginPath();
+            ctx.moveTo(-18, -25);
+            ctx.lineTo(0, -38);
+            ctx.lineTo(18, -25);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = '#AED6F1';
+            ctx.fillRect(-10, -18, 20, 12);
+            // Ticket window
+            ctx.fillStyle = '#FFEAA7';
+            ctx.beginPath();
+            ctx.arc(0, -12, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#F1C40F';
+            ctx.fillRect(-12, -45, 24, 10);
+            ctx.fillStyle = '#2C3E50';
+            ctx.font = 'bold 6px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('TICKETS', 0, -38);
+        }
+
+        // Snowmobile Rental
+        function drawSnowmobileRental() {
+            ctx.fillStyle = '#5D6D7E';
+            ctx.fillRect(-30, -25, 60, 35);
+            ctx.fillStyle = '#3498DB';
+            ctx.fillRect(-35, -30, 70, 8);
+            ctx.fillStyle = '#E74C3C';
+            ctx.fillRect(-20, -42, 40, 12);
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 6px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('SNOWMOBILE', 0, -33);
+            // Snowmobiles
+            ctx.fillStyle = '#E74C3C';
+            ctx.beginPath();
+            ctx.ellipse(-15, 5, 12, 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(-22, 8, 6, 4);
+            ctx.fillRect(-12, 8, 6, 4);
+            ctx.fillStyle = '#3498DB';
+            ctx.beginPath();
+            ctx.ellipse(15, 5, 12, 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(8, 8, 6, 4);
+            ctx.fillRect(18, 8, 6, 4);
+        }
+
+        // Photo Booth
+        function drawPhotoBooth() {
+            ctx.fillStyle = '#9B59B6';
+            ctx.fillRect(-12, -30, 24, 35);
+            ctx.fillStyle = '#8E44AD';
+            ctx.beginPath();
+            ctx.moveTo(-15, -30);
+            ctx.lineTo(0, -42);
+            ctx.lineTo(15, -30);
+            ctx.closePath();
+            ctx.fill();
+            // Camera lens
+            ctx.fillStyle = '#2C3E50';
+            ctx.beginPath();
+            ctx.arc(0, -15, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#5D6D7E';
+            ctx.beginPath();
+            ctx.arc(0, -15, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#85C1E9';
+            ctx.beginPath();
+            ctx.arc(0, -15, 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Grand Hotel
+        function drawGrandHotel(time) {
+            ctx.fillStyle = '#F5CBA7';
+            ctx.fillRect(-60, -100, 120, 110);
+            ctx.fillStyle = '#E59866';
+            ctx.beginPath();
+            ctx.moveTo(60, -100);
+            ctx.lineTo(60, 10);
+            ctx.lineTo(75, 0);
+            ctx.lineTo(75, -85);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(-65, -105, 130, 8);
+            // Towers
+            ctx.fillStyle = '#E59866';
+            ctx.fillRect(-55, -130, 25, 30);
+            ctx.fillRect(30, -130, 25, 30);
+            ctx.fillStyle = '#C0392B';
+            ctx.beginPath();
+            ctx.moveTo(-55, -130);
+            ctx.lineTo(-42, -145);
+            ctx.lineTo(-30, -130);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(30, -130);
+            ctx.lineTo(43, -145);
+            ctx.lineTo(55, -130);
+            ctx.closePath();
+            ctx.fill();
+            // Many windows
+            for (let floor = 0; floor < 4; floor++) {
+                for (let w = 0; w < 5; w++) {
+                    const winY = -90 + floor * 22;
+                    const winX = -45 + w * 22;
+                    const lit = Math.sin(time + floor + w) > 0.2;
+                    ctx.fillStyle = lit ? 'rgba(255, 220, 150, 0.9)' : 'rgba(100, 130, 160, 0.8)';
+                    ctx.fillRect(winX, winY, 15, 12);
+                }
+            }
+            // Grand entrance
+            ctx.fillStyle = '#C0392B';
+            ctx.beginPath();
+            ctx.arc(0, -10, 20, Math.PI, 0);
+            ctx.fill();
+            ctx.fillStyle = '#922B21';
+            ctx.fillRect(-15, -10, 30, 18);
+            ctx.fillStyle = '#85C1E9';
+            ctx.fillRect(-12, -8, 10, 14);
+            ctx.fillRect(2, -8, 10, 14);
+            // Flag on top
+            ctx.fillStyle = '#5D6D7E';
+            ctx.fillRect(-2, -160, 4, 20);
+            ctx.fillStyle = '#E74C3C';
+            ctx.fillRect(2, -158, 15, 10);
+        }
+
+        // Clock Tower
+        function drawClockTower(time) {
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(-20, -80, 40, 90);
+            ctx.fillStyle = '#A0522D';
+            ctx.beginPath();
+            ctx.moveTo(-25, -80);
+            ctx.lineTo(0, -100);
+            ctx.lineTo(25, -80);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(0, -55, 15, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#2C3E50';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            // Clock hands
+            const hours = (gameTime / 100) % 12;
+            const mins = (gameTime / 10) % 60;
+            ctx.strokeStyle = '#2C3E50';
+            ctx.lineWidth = 2;
+            ctx.save();
+            ctx.translate(0, -55);
+            ctx.rotate((hours / 12) * Math.PI * 2 - Math.PI / 2);
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(8, 0);
+            ctx.stroke();
+            ctx.restore();
+            ctx.save();
+            ctx.translate(0, -55);
+            ctx.rotate((mins / 60) * Math.PI * 2 - Math.PI / 2);
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(12, 0);
+            ctx.stroke();
+            ctx.restore();
+            ctx.fillStyle = '#6D4C41';
+            ctx.fillRect(-5, -20, 10, 25);
+        }
+
+        // Ice Cream Shop
+        function drawIceCreamShop() {
+            ctx.fillStyle = '#FADBD8';
+            ctx.fillRect(-15, -25, 30, 30);
+            ctx.fillStyle = '#F1948A';
+            ctx.beginPath();
+            ctx.moveTo(-18, -25);
+            ctx.lineTo(0, -40);
+            ctx.lineTo(18, -25);
+            ctx.closePath();
+            ctx.fill();
+            // Ice cream cone sign
+            ctx.fillStyle = '#F5B041';
+            ctx.beginPath();
+            ctx.moveTo(0, -35);
+            ctx.lineTo(-8, -55);
+            ctx.lineTo(8, -55);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = '#FADBD8';
+            ctx.beginPath();
+            ctx.arc(-4, -58, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#85C1E9';
+            ctx.beginPath();
+            ctx.arc(4, -60, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#AED6F1';
+            ctx.fillRect(-10, -18, 20, 12);
+        }
+
+        // Sushi Bar
+        function drawSushiBar(time) {
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(-30, -30, 60, 40);
+            ctx.fillStyle = '#E74C3C';
+            ctx.beginPath();
+            ctx.moveTo(-35, -30);
+            ctx.lineTo(0, -45);
+            ctx.lineTo(35, -30);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = '#F1C40F';
+            ctx.fillRect(-20, -55, 40, 12);
+            ctx.fillStyle = '#1a1a1a';
+            ctx.font = 'bold 8px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('SUSHI', 0, -46);
+            // Noren curtain
+            ctx.fillStyle = '#E74C3C';
+            ctx.fillRect(-25, -28, 12, 20);
+            ctx.fillRect(-10, -28, 12, 20);
+            ctx.fillRect(5, -28, 12, 20);
+            // Lantern
+            ctx.fillStyle = '#F39C12';
+            ctx.beginPath();
+            ctx.ellipse(25, -20, 6, 10, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Ramen Shop
+        function drawRamenShop(time) {
+            ctx.fillStyle = '#F5B041';
+            ctx.fillRect(-30, -30, 60, 40);
+            ctx.fillStyle = '#E67E22';
+            ctx.beginPath();
+            ctx.moveTo(-35, -30);
+            ctx.lineTo(0, -50);
+            ctx.lineTo(35, -30);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = '#E74C3C';
+            ctx.fillRect(-18, -58, 36, 12);
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 8px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('RAMEN', 0, -49);
+            ctx.fillStyle = '#AED6F1';
+            ctx.fillRect(-22, -22, 25, 18);
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(8, -20, 15, 28);
+            // Steam
+            for (let i = 0; i < 2; i++) {
+                const steamY = -30 - i * 6 - (time % 10);
+                ctx.fillStyle = `rgba(255,255,255,${0.5 - i * 0.2})`;
+                ctx.beginPath();
+                ctx.arc(-10 + Math.sin(time + i) * 2, steamY, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Igloo
+        function drawIgloo() {
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(0, 0, 25, Math.PI, 0);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = '#BDC3C7';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            // Ice block lines
+            ctx.strokeStyle = '#AED6F1';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(0, 0, 20, Math.PI, 0);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(0, 0, 12, Math.PI, 0);
+            ctx.stroke();
+            // Entrance
+            ctx.fillStyle = '#5DADE2';
+            ctx.beginPath();
+            ctx.arc(0, 5, 10, Math.PI, 0);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // Fire Pit
+        function drawFirePit(time) {
+            ctx.fillStyle = '#5D6D7E';
+            ctx.beginPath();
+            ctx.ellipse(0, 5, 18, 10, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#7F8C8D';
+            ctx.beginPath();
+            ctx.ellipse(0, 3, 14, 7, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // Fire
+            for (let i = 0; i < 5; i++) {
+                const flameH = 15 + Math.sin(time * 3 + i) * 5;
+                const flameX = -8 + i * 4;
+                ctx.fillStyle = i % 2 === 0 ? '#E74C3C' : '#F39C12';
+                ctx.beginPath();
+                ctx.moveTo(flameX, 0);
+                ctx.quadraticCurveTo(flameX - 3, -flameH / 2, flameX, -flameH);
+                ctx.quadraticCurveTo(flameX + 3, -flameH / 2, flameX, 0);
+                ctx.fill();
+            }
+        }
+
+        // Hot Tub
+        function drawHotTub(time) {
+            ctx.fillStyle = '#8B4513';
+            ctx.beginPath();
+            ctx.ellipse(0, 5, 28, 15, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#5DADE2';
+            ctx.beginPath();
+            ctx.ellipse(0, 2, 24, 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // Steam
+            for (let i = 0; i < 4; i++) {
+                const steamY = -5 - i * 8 - (time % 15);
+                const steamX = -12 + i * 8 + Math.sin(time + i) * 3;
+                ctx.fillStyle = `rgba(255,255,255,${0.5 - i * 0.12})`;
+                ctx.beginPath();
+                ctx.arc(steamX, steamY, 5 - i * 0.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            // People in tub
+            ctx.fillStyle = '#FFEAA7';
+            ctx.beginPath();
+            ctx.arc(-8, -5, 5, 0, Math.PI * 2);
+            ctx.arc(8, -5, 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Ice Statue
+        function drawIceStatue() {
+            ctx.fillStyle = '#AED6F1';
+            ctx.fillRect(-5, -40, 10, 45);
+            ctx.beginPath();
+            ctx.arc(0, -45, 10, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#85C1E9';
+            ctx.fillRect(-12, -25, 24, 5);
+            ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            ctx.beginPath();
+            ctx.arc(3, -48, 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Snow Arch
+        function drawSnowArch() {
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(0, 0, 30, Math.PI, 0);
+            ctx.lineTo(25, 10);
+            ctx.lineTo(25, 0);
+            ctx.arc(0, 0, 20, 0, Math.PI, true);
+            ctx.lineTo(-25, 10);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = '#BDC3C7';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        // Forest cluster
+        function drawForest() {
+            const positions = [[-15, 5], [15, 5], [0, -10], [-8, 8], [8, 8]];
+            positions.forEach(([x, y], i) => {
+                ctx.fillStyle = '#5D4037';
+                ctx.fillRect(x - 2, y, 4, 8);
+                ctx.fillStyle = i % 2 === 0 ? '#2E7D32' : '#388E3C';
+                ctx.beginPath();
+                ctx.moveTo(x, y - 20);
+                ctx.lineTo(x - 10, y);
+                ctx.lineTo(x + 10, y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.moveTo(x, y - 18);
+                ctx.lineTo(x - 5, y - 10);
+                ctx.lineTo(x + 5, y - 10);
+                ctx.closePath();
+                ctx.fill();
+            });
+        }
+
+        // Rocks
+        function drawRocks() {
+            ctx.fillStyle = '#7F8C8D';
+            ctx.beginPath();
+            ctx.moveTo(-12, 8);
+            ctx.lineTo(-15, -5);
+            ctx.lineTo(-5, -12);
+            ctx.lineTo(8, -8);
+            ctx.lineTo(15, 5);
+            ctx.lineTo(5, 10);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = '#95A5A6';
+            ctx.beginPath();
+            ctx.moveTo(-5, -10);
+            ctx.lineTo(0, -5);
+            ctx.lineTo(6, -6);
+            ctx.lineTo(3, -12);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.ellipse(0, -8, 5, 2, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Christmas Tree
+        function drawChristmasTree(time) {
+            ctx.fillStyle = '#5D4037';
+            ctx.fillRect(-4, -5, 8, 15);
+            ctx.fillStyle = '#2E7D32';
+            ctx.beginPath();
+            ctx.moveTo(0, -50);
+            ctx.lineTo(-20, -5);
+            ctx.lineTo(20, -5);
+            ctx.closePath();
+            ctx.fill();
+            // Star
+            ctx.fillStyle = '#F1C40F';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('★', 0, -45);
+            // Ornaments
+            const ornamentColors = ['#E74C3C', '#3498DB', '#F1C40F', '#9B59B6'];
+            for (let i = 0; i < 6; i++) {
+                const angle = i * 1.2 + 0.5;
+                const dist = 8 + i * 2;
+                const ox = Math.cos(angle) * dist;
+                const oy = -15 - i * 5;
+                ctx.fillStyle = ornamentColors[i % 4];
+                ctx.beginPath();
+                ctx.arc(ox, oy, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            // Twinkling lights
+            for (let i = 0; i < 8; i++) {
+                if (Math.sin(time * 2 + i) > 0.3) {
+                    const lx = (i % 2 === 0 ? -1 : 1) * (5 + i * 1.5);
+                    const ly = -10 - i * 4;
+                    ctx.fillStyle = 'rgba(255,255,200,0.9)';
+                    ctx.beginPath();
+                    ctx.arc(lx, ly, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        // Ski Rack
+        function drawSkiRack() {
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(-15, -5, 4, 15);
+            ctx.fillRect(11, -5, 4, 15);
+            ctx.fillRect(-15, -8, 30, 4);
+            const skiColors = ['#E74C3C', '#3498DB', '#2ECC71', '#F39C12'];
+            for (let i = 0; i < 4; i++) {
+                ctx.fillStyle = skiColors[i];
+                ctx.fillRect(-10 + i * 6, -30, 3, 25);
+            }
+        }
+
+        // Snow Cannon
+        function drawSnowCannon(time) {
+            ctx.fillStyle = '#5D6D7E';
+            ctx.fillRect(-8, -5, 16, 15);
+            ctx.beginPath();
+            ctx.arc(0, -5, 10, Math.PI, 0);
+            ctx.fill();
+            ctx.fillStyle = '#3498DB';
+            ctx.save();
+            ctx.translate(0, -8);
+            ctx.rotate(-0.5);
+            ctx.fillRect(-5, -30, 10, 25);
+            ctx.beginPath();
+            ctx.arc(0, -30, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+            // Snow spray
+            for (let i = 0; i < 8; i++) {
+                const spray = (time * 3 + i * 5) % 30;
+                const sx = -20 - spray + Math.sin(i) * 5;
+                const sy = -35 - spray * 0.3;
+                ctx.fillStyle = `rgba(255,255,255,${0.8 - spray / 40})`;
+                ctx.beginPath();
+                ctx.arc(sx, sy, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Observation Tower
+        function drawObservationTower() {
+            ctx.fillStyle = '#5D6D7E';
+            ctx.fillRect(-5, -70, 10, 80);
+            ctx.fillRect(-3, -70, 6, 75);
+            // Platform
+            ctx.fillStyle = '#7F8C8D';
+            ctx.fillRect(-20, -75, 40, 8);
+            // Railing
+            ctx.strokeStyle = '#5D6D7E';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(-18, -85, 36, 12);
+            // Roof
+            ctx.fillStyle = '#E74C3C';
+            ctx.beginPath();
+            ctx.moveTo(-22, -85);
+            ctx.lineTo(0, -100);
+            ctx.lineTo(22, -85);
+            ctx.closePath();
+            ctx.fill();
+            // Person looking out
+            ctx.fillStyle = '#3498DB';
+            ctx.fillRect(-5, -82, 6, 8);
+            ctx.fillStyle = '#FFEAA7';
+            ctx.beginPath();
+            ctx.arc(-2, -85, 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Playground
+        function drawPlayground() {
+            // Slide
+            ctx.fillStyle = '#E74C3C';
+            ctx.beginPath();
+            ctx.moveTo(-25, 10);
+            ctx.lineTo(-20, -25);
+            ctx.lineTo(-15, -25);
+            ctx.lineTo(-10, 10);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = '#5D6D7E';
+            ctx.fillRect(-22, -28, 8, 5);
+            // Swing
+            ctx.fillStyle = '#5D6D7E';
+            ctx.fillRect(10, -30, 4, 35);
+            ctx.fillRect(30, -30, 4, 35);
+            ctx.fillRect(8, -32, 28, 4);
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(18, -28);
+            ctx.lineTo(18, -10);
+            ctx.moveTo(26, -28);
+            ctx.lineTo(26, -10);
+            ctx.stroke();
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(15, -12, 14, 4);
+        }
+
+        // Reindeer decoration
+        function drawReindeerDecor() {
+            ctx.fillStyle = '#A0522D';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 15, 10, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(15, -10, 8, 6, 0.3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(-10, 8, 4, 10);
+            ctx.fillRect(5, 8, 4, 10);
+            // Antlers
+            ctx.strokeStyle = '#6D4C41';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(10, -15);
+            ctx.lineTo(5, -25);
+            ctx.lineTo(0, -22);
+            ctx.moveTo(5, -25);
+            ctx.lineTo(8, -30);
+            ctx.moveTo(18, -15);
+            ctx.lineTo(23, -25);
+            ctx.lineTo(28, -22);
+            ctx.moveTo(23, -25);
+            ctx.lineTo(20, -30);
+            ctx.stroke();
+            // Red nose
+            ctx.fillStyle = '#E74C3C';
+            ctx.beginPath();
+            ctx.arc(22, -10, 4, 0, Math.PI * 2);
+            ctx.fill();
+            // Eye
+            ctx.fillStyle = '#1a1a1a';
+            ctx.beginPath();
+            ctx.arc(17, -13, 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Santa's Sleigh
+        function drawSantaSleigh() {
+            // Runners
+            ctx.strokeStyle = '#C0392B';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(-25, 10);
+            ctx.quadraticCurveTo(-30, 5, -25, 0);
+            ctx.lineTo(20, 0);
+            ctx.quadraticCurveTo(30, 0, 25, 10);
+            ctx.stroke();
+            // Body
+            ctx.fillStyle = '#E74C3C';
+            ctx.beginPath();
+            ctx.moveTo(-20, -5);
+            ctx.lineTo(-25, -20);
+            ctx.lineTo(20, -20);
+            ctx.lineTo(25, -5);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = '#C0392B';
+            ctx.fillRect(-22, -25, 44, 8);
+            // Gift bags
+            ctx.fillStyle = '#2ECC71';
+            ctx.fillRect(-15, -35, 12, 12);
+            ctx.fillStyle = '#3498DB';
+            ctx.fillRect(0, -32, 10, 10);
+            ctx.fillStyle = '#F1C40F';
+            ctx.fillRect(12, -30, 8, 8);
+        }
+
+        // Generic building fallback
+        function drawGenericBuilding(def) {
+            ctx.fillStyle = '#95A5A6';
+            ctx.fillRect(-25, -30, 50, 40);
+            ctx.fillStyle = '#7F8C8D';
+            ctx.beginPath();
+            ctx.moveTo(-30, -30);
+            ctx.lineTo(0, -50);
+            ctx.lineTo(30, -30);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = '#AED6F1';
+            ctx.fillRect(-15, -20, 12, 10);
+            ctx.fillRect(5, -20, 12, 10);
+            ctx.fillStyle = '#5D6D7E';
+            ctx.fillRect(-5, -15, 10, 22);
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 8px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(def.name, 0, -38);
+        }
+
+        // Draw a guest/skier
+        function drawGuest(guest) {
+            ctx.save();
+            ctx.translate(guest.x, guest.y);
+
+            // Shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.2)';
+            ctx.beginPath();
+            ctx.ellipse(0, 10, 10, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Body colors based on guest type
+            const colors = ['#e74c3c', '#3498db', '#2ecc71', '#9b59b6', '#f39c12'];
+            const color = colors[guest.colorIndex % colors.length];
+
+            // Skis
+            ctx.fillStyle = '#e74c3c';
+            ctx.fillRect(-8, 5, 4, 15);
+            ctx.fillRect(4, 5, 4, 15);
+
+            // Body
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.roundRect(-8, -15, 16, 20, 4);
+            ctx.fill();
+
+            // Head
+            ctx.fillStyle = '#ffeaa7';
+            ctx.beginPath();
+            ctx.arc(0, -22, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Helmet
+            ctx.fillStyle = shadeColor(color, -20);
+            ctx.beginPath();
+            ctx.arc(0, -24, 9, Math.PI, 0);
+            ctx.fill();
+
+            // Goggles
+            ctx.fillStyle = '#2d3436';
+            ctx.fillRect(-7, -24, 14, 5);
+            ctx.fillStyle = '#74b9ff';
+            ctx.fillRect(-6, -23, 5, 3);
+            ctx.fillRect(1, -23, 5, 3);
+
+            // Smile
+            if (guest.happy) {
+                ctx.strokeStyle = '#e17055';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.arc(0, -18, 4, 0.2, Math.PI - 0.2);
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+
+        // Draw animals
+        function drawAnimal(animal) {
+            ctx.save();
+            ctx.translate(animal.x, animal.y);
+
+            if (animal.type === 'deer') {
+                // Cute cartoon deer
+                const facing = animal.vx >= 0 ? 1 : -1;
+                ctx.scale(facing, 1);
+
+                // Shadow
+                ctx.fillStyle = 'rgba(0,0,0,0.15)';
+                ctx.beginPath();
+                ctx.ellipse(0, 12, 15, 5, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Back legs
+                ctx.fillStyle = '#8B7355';
+                ctx.fillRect(-8, 0, 4, 12);
+                ctx.fillRect(4, 0, 4, 12);
+
+                // Body
+                ctx.fillStyle = '#C4A574';
+                ctx.beginPath();
+                ctx.ellipse(0, -5, 14, 10, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // White belly
+                ctx.fillStyle = '#F5F0E6';
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 8, 6, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Head
+                ctx.fillStyle = '#C4A574';
+                ctx.beginPath();
+                ctx.ellipse(12, -12, 8, 7, 0.3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Snout
+                ctx.fillStyle = '#A08060';
+                ctx.beginPath();
+                ctx.ellipse(18, -10, 4, 3, 0.2, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Nose
+                ctx.fillStyle = '#4A3728';
+                ctx.beginPath();
+                ctx.ellipse(21, -10, 2, 1.5, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Eye
+                ctx.fillStyle = '#2D1F14';
+                ctx.beginPath();
+                ctx.arc(14, -14, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(14.5, -14.5, 1, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Ears
+                ctx.fillStyle = '#C4A574';
+                ctx.beginPath();
+                ctx.ellipse(8, -20, 3, 5, -0.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#E8D4C4';
+                ctx.beginPath();
+                ctx.ellipse(8, -19, 1.5, 3, -0.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Small antlers (cute style)
+                ctx.strokeStyle = '#6B5344';
+                ctx.lineWidth = 2;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(10, -22);
+                ctx.lineTo(8, -28);
+                ctx.lineTo(5, -26);
+                ctx.moveTo(8, -28);
+                ctx.lineTo(10, -30);
+                ctx.stroke();
+
+                // Tail (white fluffy)
+                ctx.fillStyle = '#F5F0E6';
+                ctx.beginPath();
+                ctx.ellipse(-14, -6, 4, 3, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+            } else if (animal.type === 'rabbit') {
+                const hopOffset = animal.isHopping ? -8 : 0;
+                ctx.translate(0, hopOffset);
+
+                // Shadow
+                ctx.fillStyle = 'rgba(0,0,0,0.15)';
+                ctx.beginPath();
+                ctx.ellipse(0, 10 - hopOffset, 10, 4, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Back feet
+                ctx.fillStyle = '#E8E0D8';
+                ctx.beginPath();
+                ctx.ellipse(-5, 8, 5, 3, -0.3, 0, Math.PI * 2);
+                ctx.ellipse(5, 8, 5, 3, 0.3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Body (fluffy round)
+                ctx.fillStyle = '#FFFFFF';
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 10, 9, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Head
+                ctx.beginPath();
+                ctx.ellipse(0, -12, 8, 7, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Ears
+                ctx.fillStyle = '#FFFFFF';
+                ctx.beginPath();
+                ctx.ellipse(-4, -26, 3, 10, -0.2, 0, Math.PI * 2);
+                ctx.ellipse(4, -26, 3, 10, 0.2, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Inner ears (pink)
+                ctx.fillStyle = '#FFCECE';
+                ctx.beginPath();
+                ctx.ellipse(-4, -25, 1.5, 6, -0.2, 0, Math.PI * 2);
+                ctx.ellipse(4, -25, 1.5, 6, 0.2, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Eyes
+                ctx.fillStyle = '#2D1F14';
+                ctx.beginPath();
+                ctx.arc(-3, -13, 2, 0, Math.PI * 2);
+                ctx.arc(3, -13, 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(-2.5, -13.5, 0.8, 0, Math.PI * 2);
+                ctx.arc(3.5, -13.5, 0.8, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Nose (pink)
+                ctx.fillStyle = '#FFB0B0';
+                ctx.beginPath();
+                ctx.ellipse(0, -9, 2, 1.5, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Whiskers
+                ctx.strokeStyle = '#CCCCCC';
+                ctx.lineWidth = 0.5;
+                ctx.beginPath();
+                ctx.moveTo(-2, -8);
+                ctx.lineTo(-10, -7);
+                ctx.moveTo(-2, -9);
+                ctx.lineTo(-10, -10);
+                ctx.moveTo(2, -8);
+                ctx.lineTo(10, -7);
+                ctx.moveTo(2, -9);
+                ctx.lineTo(10, -10);
+                ctx.stroke();
+
+                // Fluffy tail
+                ctx.fillStyle = '#FFFFFF';
+                ctx.beginPath();
+                ctx.arc(0, 8, 5, 0, Math.PI * 2);
+                ctx.fill();
+
+            } else if (animal.type === 'bird') {
+                const wingFlap = Math.sin(animal.wingPhase) * 0.4;
+                const facing = animal.vx >= 0 ? 1 : -1;
+                ctx.scale(facing, 1);
+
+                // Body
+                ctx.fillStyle = '#87CEEB';
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 10, 7, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Wing
+                ctx.save();
+                ctx.translate(-2, -3);
+                ctx.rotate(wingFlap);
+                ctx.fillStyle = '#5DADE2';
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 8, 4, -0.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+
+                // Head
+                ctx.fillStyle = '#87CEEB';
+                ctx.beginPath();
+                ctx.arc(8, -4, 6, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Belly
+                ctx.fillStyle = '#F5F5F5';
+                ctx.beginPath();
+                ctx.ellipse(0, 3, 6, 4, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Beak
+                ctx.fillStyle = '#FFA500';
+                ctx.beginPath();
+                ctx.moveTo(12, -4);
+                ctx.lineTo(18, -3);
+                ctx.lineTo(12, -2);
+                ctx.closePath();
+                ctx.fill();
+
+                // Eye
+                ctx.fillStyle = '#1a1a1a';
+                ctx.beginPath();
+                ctx.arc(10, -5, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(10.3, -5.3, 0.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Tail feathers
+                ctx.fillStyle = '#5DADE2';
+                ctx.beginPath();
+                ctx.moveTo(-10, 0);
+                ctx.lineTo(-18, -3);
+                ctx.lineTo(-16, 0);
+                ctx.lineTo(-18, 3);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            ctx.restore();
+        }
+
+        // Draw snowflakes
+        function drawSnowflakes() {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            for (let flake of snowflakes) {
+                ctx.beginPath();
+                ctx.arc(flake.x, flake.y, flake.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Draw particles (coins, effects)
+        function drawParticles() {
+            for (let p of particles) {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        // Draw floating text (coin gains)
+        function drawFloatingTexts() {
+            for (let ft of floatingTexts) {
+                ctx.globalAlpha = ft.life;
+                ctx.fillStyle = '#f6e05e';
+                ctx.font = 'bold 16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(ft.text, ft.x, ft.y);
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        // Draw placement preview
+        function drawPlacementPreview(gx, gy) {
+            if (!selectedBuilding) return;
+
+            const def = BUILDINGS[selectedBuilding];
+            const valid = isValidPosition(gx, gy, def.width, def.height);
+
+            for (let dx = 0; dx < def.width; dx++) {
+                for (let dy = 0; dy < def.height; dy++) {
+                    const pos = gridToScreen(gx + dx, gy + dy);
+                    const terrainH = getTerrainHeight(gx + dx, gy + dy);
+
+                    ctx.save();
+                    ctx.translate(pos.x, pos.y - terrainH);
+                    ctx.globalAlpha = 0.5;
+                    ctx.fillStyle = valid ? '#68d391' : '#fc8181';
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(TILE_WIDTH / 2, TILE_HEIGHT / 2);
+                    ctx.lineTo(0, TILE_HEIGHT);
+                    ctx.lineTo(-TILE_WIDTH / 2, TILE_HEIGHT / 2);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+
+            // Draw preview icon
+            const pos = gridToScreen(gx, gy);
+            const terrainH = getTerrainHeight(gx, gy);
+            ctx.globalAlpha = 0.7;
+            ctx.font = '40px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(def.icon, pos.x, pos.y - terrainH - 10);
+            ctx.globalAlpha = 1;
+        }
+
+        // Update game state
+        function update() {
+            gameTime++;
+
+            // Update day/time
+            if (gameTime % 1200 === 0) {
+                dayNumber++;
+                // Random chance for powder day
+                if (Math.random() < 0.15) {
+                    triggerPowderDay();
+                }
+            }
+
+            // Update powder day
+            if (isPowderDay) {
+                powderDayTimer--;
+                if (powderDayTimer <= 0) {
+                    isPowderDay = false;
+                }
+            }
+
+            // Update snowflakes
+            for (let flake of snowflakes) {
+                flake.y += flake.speed * (isPowderDay ? 2 : 1);
+                flake.x += Math.sin(flake.wobble + gameTime * 0.02) * 0.5;
+                flake.wobble += 0.01;
+
+                if (flake.y > canvas.height) {
+                    flake.y = -10;
+                    flake.x = Math.random() * canvas.width;
+                }
+            }
+
+            // Update animals
+            for (let animal of animals) {
+                if (animal.type === 'deer') {
+                    animal.x += animal.vx;
+                    if (Math.random() < 0.01) {
+                        animal.targetX = Math.random() * canvas.width;
+                    }
+                    animal.vx += (animal.targetX - animal.x) * 0.0001;
+                    animal.vx *= 0.99;
+                    if (animal.x < 0) animal.x = canvas.width;
+                    if (animal.x > canvas.width) animal.x = 0;
+                } else if (animal.type === 'rabbit') {
+                    animal.hopTimer--;
+                    if (animal.hopTimer <= 0 && !animal.isHopping) {
+                        animal.isHopping = true;
+                        animal.vx = (Math.random() - 0.5) * 20;
+                        setTimeout(() => {
+                            animal.x += animal.vx;
+                            animal.isHopping = false;
+                            animal.hopTimer = Math.random() * 200 + 50;
+                        }, 200);
+                    }
+                    animal.x = Math.max(50, Math.min(canvas.width - 50, animal.x));
+                } else if (animal.type === 'bird') {
+                    animal.x += animal.vx;
+                    animal.y += Math.sin(animal.wingPhase) * 0.5;
+                    animal.wingPhase += 0.1;
+                    if (animal.x < -50) animal.x = canvas.width + 50;
+                    if (animal.x > canvas.width + 50) animal.x = -50;
+                }
+            }
+
+            // Spawn guests based on buildings
+            const maxGuests = calculateMaxGuests();
+            if (guests.length < maxGuests && Math.random() < 0.02) {
+                spawnGuest();
+            }
+
+            // Update guests
+            for (let guest of guests) {
+                guest.x += guest.vx;
+                guest.y += guest.vy;
+
+                // Wander behavior
+                if (Math.random() < 0.02) {
+                    guest.vx = (Math.random() - 0.5) * 2;
+                    guest.vy = (Math.random() - 0.5) * 1;
+                }
+
+                // Keep in bounds
+                guest.x = Math.max(100, Math.min(canvas.width - 100, guest.x));
+                guest.y = Math.max(200, Math.min(canvas.height - 100, guest.y));
+
+                // Generate income
+                guest.incomeTimer--;
+                if (guest.incomeTimer <= 0) {
+                    const income = isPowderDay ? 2 : 1;
+                    addCoins(income, guest.x, guest.y);
+                    guest.incomeTimer = 120;
+                }
+            }
+
+            // Building income
+            if (gameTime % 60 === 0) {
+                for (let building of buildings) {
+                    const def = BUILDINGS[building.type];
+                    const income = def.income * (isPowderDay ? 2 : 1);
+                    const pos = gridToScreen(building.gx, building.gy);
+                    addCoins(income, pos.x, pos.y - getTerrainHeight(building.gx, building.gy));
+                }
+            }
+
+            // Update particles
+            for (let p of particles) {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.1;
+                p.life -= 0.02;
+            }
+            particles = particles.filter(p => p.life > 0);
+
+            // Update floating texts
+            for (let ft of floatingTexts) {
+                ft.y -= 1;
+                ft.life -= 0.02;
+            }
+            floatingTexts = floatingTexts.filter(ft => ft.life > 0);
+
+            // Update UI
+            updateUI();
+        }
+
+        // Calculate max guests based on buildings
+        function calculateMaxGuests() {
+            let max = 0;
+            for (let b of buildings) {
+                const def = BUILDINGS[b.type];
+                if (def.category === 'buildings') max += 3;
+                if (def.category === 'lifts') max += 5;
+                if (b.type === 'hotel') max += 10;
+            }
+            return Math.min(max, 50);
+        }
+
+        // Spawn a guest
+        function spawnGuest() {
+            guests.push({
+                x: canvas.width / 2 + (Math.random() - 0.5) * 200,
+                y: canvas.height - 100,
+                vx: (Math.random() - 0.5) * 2,
+                vy: -Math.random() * 0.5,
+                colorIndex: Math.floor(Math.random() * 5),
+                happy: Math.random() > 0.2,
+                incomeTimer: 60 + Math.random() * 60
+            });
+        }
+
+        // Add coins with effect
+        function addCoins(amount, x, y) {
+            coins += amount;
+
+            // Floating text
+            floatingTexts.push({
+                text: `+${amount}`,
+                x: x + (Math.random() - 0.5) * 20,
+                y: y,
+                life: 1
+            });
+
+            // Coin particles
+            for (let i = 0; i < 3; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: -Math.random() * 3 - 2,
+                    size: 4,
+                    color: '#f6e05e',
+                    life: 1
+                });
+            }
+        }
+
+        // Trigger powder day
+        function triggerPowderDay() {
+            isPowderDay = true;
+            powderDayTimer = 600; // 10 seconds at 60fps
+
+            const popup = document.createElement('div');
+            popup.className = 'powder-day';
+            popup.innerHTML = '<h2>❄️ POWDER DAY! ❄️</h2><p>Double coins for a short time!</p>';
+            document.body.appendChild(popup);
+
+            setTimeout(() => popup.remove(), 3000);
+        }
+
+        // Calculate star rating
+        function calculateRating() {
+            let score = 0;
+            for (let b of buildings) {
+                const def = BUILDINGS[b.type];
+                score += def.income;
+            }
+            return Math.min(5, Math.floor(score / 50) + 1);
+        }
+
+        // Calculate income rate
+        function calculateIncomeRate() {
+            let rate = 0;
+            for (let b of buildings) {
+                rate += BUILDINGS[b.type].income;
+            }
+            rate += guests.length;
+            if (isPowderDay) rate *= 2;
+            return rate;
+        }
+
+        // Update UI elements
+        function updateUI() {
+            document.getElementById('coinCount').textContent = Math.floor(coins);
+            document.getElementById('guestCount').textContent = guests.length;
+            document.getElementById('starRating').textContent = '⭐'.repeat(calculateRating());
+            document.getElementById('incomeRate').textContent = calculateIncomeRate();
+
+            // Time display
+            const timeOfDay = (gameTime % 1200) / 1200;
+            let timeText = 'Morning';
+            if (timeOfDay > 0.25 && timeOfDay <= 0.5) timeText = 'Midday';
+            else if (timeOfDay > 0.5 && timeOfDay <= 0.75) timeText = 'Evening';
+            else if (timeOfDay > 0.75) timeText = 'Night';
+            document.getElementById('timeDisplay').textContent = `Day ${dayNumber} - ${timeText}`;
+
+            // Weather
+            if (isPowderDay) {
+                document.getElementById('weatherIcon').textContent = '🌨️';
+                document.getElementById('weatherText').textContent = 'Powder Day!';
+            } else {
+                document.getElementById('weatherIcon').textContent = '❄️';
+                document.getElementById('weatherText').textContent = 'Snowing';
+            }
+        }
+
+        // Render build menu
+        function renderBuildMenu() {
+            const menu = document.getElementById('buildMenu');
+            menu.innerHTML = '';
+
+            let totalSpent = 0;
+            for (let b of buildings) {
+                totalSpent += BUILDINGS[b.type].cost;
+            }
+
+            for (let [key, def] of Object.entries(BUILDINGS)) {
+                if (def.category !== currentCategory) continue;
+
+                const unlocked = totalSpent >= def.unlockAt;
+                const canAfford = coins >= def.cost;
+
+                const item = document.createElement('div');
+                item.className = 'build-item' +
+                    (selectedBuilding === key ? ' selected' : '') +
+                    (!unlocked ? ' locked' : '');
+
+                item.innerHTML = `
+                    <div class="icon">${def.icon}</div>
+                    <div class="name">${def.name}</div>
+                    <div class="cost">${unlocked ? `💰 ${def.cost}` : `🔒 ${def.unlockAt} spent`}</div>
+                    <div class="income">+${def.income}/s</div>
+                `;
+
+                if (unlocked) {
+                    item.onclick = () => {
+                        if (deleteMode) {
+                            deleteMode = false;
+                            document.querySelector('.action-btn.delete').style.background = '#fc8181';
+                        }
+                        selectedBuilding = selectedBuilding === key ? null : key;
+                        renderBuildMenu();
+                    };
+                }
+
+                menu.appendChild(item);
+            }
+        }
+
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentCategory = btn.dataset.category;
+                renderBuildMenu();
+            };
+        });
+
+        // Toggle delete mode
+        function toggleDeleteMode() {
+            deleteMode = !deleteMode;
+            selectedBuilding = null;
+            document.querySelector('.action-btn.delete').style.background = deleteMode ? '#c53030' : '#fc8181';
+            renderBuildMenu();
+        }
+
+        // Save game
+        function saveGame() {
+            const saveData = {
+                coins: coins,
+                buildings: buildings,
+                dayNumber: dayNumber,
+                gameTime: gameTime
+            };
+            localStorage.setItem('skiResortSave', JSON.stringify(saveData));
+            showNotification('Game Saved!');
+        }
+
+        // Load game
+        function loadGame() {
+            const saved = localStorage.getItem('skiResortSave');
+            if (saved) {
+                const data = JSON.parse(saved);
+                coins = data.coins;
+                buildings = data.buildings;
+                dayNumber = data.dayNumber || 1;
+                gameTime = data.gameTime || 0;
+            }
+        }
+
+        // Show notification
+        function showNotification(text) {
+            const notif = document.createElement('div');
+            notif.className = 'notification';
+            notif.textContent = text;
+            document.body.appendChild(notif);
+            setTimeout(() => notif.remove(), 2500);
+        }
+
+        // Mouse position tracking
+        let mouseGridX = 0, mouseGridY = 0;
+
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const grid = screenToGrid(mouseX, mouseY);
+            mouseGridX = grid.gx;
+            mouseGridY = grid.gy;
+        });
+
+        // Click to place or delete
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const grid = screenToGrid(mouseX, mouseY);
+
+            if (deleteMode) {
+                // Find and remove building at this position
+                const idx = buildings.findIndex(b => {
+                    const def = BUILDINGS[b.type];
+                    return grid.gx >= b.gx && grid.gx < b.gx + def.width &&
+                           grid.gy >= b.gy && grid.gy < b.gy + def.height;
+                });
+                if (idx !== -1) {
+                    const refund = Math.floor(BUILDINGS[buildings[idx].type].cost * 0.5);
+                    coins += refund;
+                    buildings.splice(idx, 1);
+                    showNotification(`Removed! +${refund} coins refund`);
+                }
+            } else if (selectedBuilding) {
+                const def = BUILDINGS[selectedBuilding];
+                if (coins >= def.cost && isValidPosition(grid.gx, grid.gy, def.width, def.height)) {
+                    coins -= def.cost;
+                    buildings.push({
+                        type: selectedBuilding,
+                        gx: grid.gx,
+                        gy: grid.gy
+                    });
+
+                    // Effects
+                    const pos = gridToScreen(grid.gx, grid.gy);
+                    for (let i = 0; i < 10; i++) {
+                        particles.push({
+                            x: pos.x,
+                            y: pos.y - getTerrainHeight(grid.gx, grid.gy),
+                            vx: (Math.random() - 0.5) * 6,
+                            vy: -Math.random() * 4 - 2,
+                            size: 6,
+                            color: '#68d391',
+                            life: 1
+                        });
+                    }
+
+                    showNotification(`Built ${def.name}!`);
+                    renderBuildMenu();
+                }
+            }
+        });
+
+        // Pan with drag
+        let isDragging = false;
+        let lastDragX, lastDragY;
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (!selectedBuilding && !deleteMode) {
+                isDragging = true;
+                lastDragX = e.clientX;
+                lastDragY = e.clientY;
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                offsetX += e.clientX - lastDragX;
+                offsetY += e.clientY - lastDragY;
+                lastDragX = e.clientX;
+                lastDragY = e.clientY;
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            isDragging = false;
+        });
+
+        // Main draw function
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawTerrain();
+
+            // Draw animals (behind buildings)
+            for (let animal of animals) {
+                drawAnimal(animal);
+            }
+
+            // Sort and draw buildings by y position
+            const sortedBuildings = [...buildings].sort((a, b) => (a.gy + a.gx) - (b.gy + b.gx));
+            for (let building of sortedBuildings) {
+                drawBuilding(building);
+            }
+
+            // Draw guests
+            for (let guest of guests) {
+                drawGuest(guest);
+            }
+
+            // Draw placement preview
+            if (selectedBuilding && mouseGridX >= 0 && mouseGridY >= 0) {
+                drawPlacementPreview(mouseGridX, mouseGridY);
+            }
+
+            drawSnowflakes();
+            drawParticles();
+            drawFloatingTexts();
+
+            // Powder day overlay
+            if (isPowderDay) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        // Game loop
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Initialize
+        loadGame();
+        renderBuildMenu();
+        gameLoop();
+    </script>
+</body>
+</html>
