@@ -3547,28 +3547,112 @@
             ctx.save();
             ctx.translate(guest.x, guest.y);
 
-            // Shadow
-            ctx.fillStyle = 'rgba(0,0,0,0.2)';
-            ctx.beginPath();
-            ctx.ellipse(0, 10, 10, 5, 0, 0, Math.PI * 2);
-            ctx.fill();
+            // Scale for giant mode
+            if (guest.size && guest.size !== 1) {
+                ctx.scale(guest.size, guest.size);
+            }
 
             // Body colors based on guest type
             const colors = ['#e74c3c', '#3498db', '#2ecc71', '#9b59b6', '#f39c12'];
             const color = colors[guest.colorIndex % colors.length];
 
-            // Skis
-            ctx.fillStyle = '#e74c3c';
-            ctx.fillRect(-8, 5, 4, 15);
-            ctx.fillRect(4, 5, 4, 15);
+            // Different poses based on state
+            if (guest.state === 'skiing') {
+                // Skiing pose - leaning forward, dynamic!
+                ctx.rotate(-0.3); // Lean forward
 
-            // Body
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.roundRect(-8, -15, 16, 20, 4);
-            ctx.fill();
+                // Shadow (stretched for speed)
+                ctx.fillStyle = 'rgba(0,0,0,0.2)';
+                ctx.beginPath();
+                ctx.ellipse(0, 12, 15, 5, 0, 0, Math.PI * 2);
+                ctx.fill();
 
-            // Head
+                // Skis (angled for carving)
+                ctx.fillStyle = '#e74c3c';
+                ctx.save();
+                ctx.rotate(0.2);
+                ctx.fillRect(-10, 5, 4, 18);
+                ctx.fillRect(4, 5, 4, 18);
+                ctx.restore();
+
+                // Ski poles (held back)
+                ctx.strokeStyle = '#666';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(-12, -5);
+                ctx.lineTo(-20, 15);
+                ctx.moveTo(12, -5);
+                ctx.lineTo(20, 15);
+                ctx.stroke();
+
+                // Body (crouched)
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.roundRect(-8, -12, 16, 17, 4);
+                ctx.fill();
+
+            } else if (guest.state === 'ridingLift') {
+                // On lift - sitting pose
+                // Shadow
+                ctx.fillStyle = 'rgba(0,0,0,0.15)';
+                ctx.beginPath();
+                ctx.ellipse(0, 15, 8, 4, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Skis (hanging down)
+                ctx.fillStyle = '#e74c3c';
+                ctx.fillRect(-6, 8, 3, 12);
+                ctx.fillRect(3, 8, 3, 12);
+
+                // Body (sitting)
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.roundRect(-8, -10, 16, 18, 4);
+                ctx.fill();
+
+                // Arms holding bar
+                ctx.strokeStyle = shadeColor(color, -20);
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(-8, -5);
+                ctx.lineTo(-12, -15);
+                ctx.moveTo(8, -5);
+                ctx.lineTo(12, -15);
+                ctx.stroke();
+
+                // Lift bar above
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(-15, -18);
+                ctx.lineTo(15, -18);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0, -18);
+                ctx.lineTo(0, -30);
+                ctx.stroke();
+
+            } else {
+                // Walking/standing pose (default)
+                // Shadow
+                ctx.fillStyle = 'rgba(0,0,0,0.2)';
+                ctx.beginPath();
+                ctx.ellipse(0, 10, 10, 5, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Skis
+                ctx.fillStyle = '#e74c3c';
+                ctx.fillRect(-8, 5, 4, 15);
+                ctx.fillRect(4, 5, 4, 15);
+
+                // Body
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.roundRect(-8, -15, 16, 20, 4);
+                ctx.fill();
+            }
+
+            // Head (same for all poses)
             ctx.fillStyle = '#ffeaa7';
             ctx.beginPath();
             ctx.arc(0, -22, 8, 0, Math.PI * 2);
@@ -3587,13 +3671,22 @@
             ctx.fillRect(-6, -23, 5, 3);
             ctx.fillRect(1, -23, 5, 3);
 
-            // Smile
-            if (guest.happy) {
+            // Smile when happy
+            if (guest.happy || guest.state === 'skiing' || guest.state === 'ridingLift') {
                 ctx.strokeStyle = '#e17055';
                 ctx.lineWidth = 1.5;
                 ctx.beginPath();
                 ctx.arc(0, -18, 4, 0.2, Math.PI - 0.2);
                 ctx.stroke();
+            }
+
+            // State indicator (small icon above head)
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            if (guest.state === 'skiing') {
+                ctx.fillText('🎿', 0, -38);
+            } else if (guest.state === 'ridingLift') {
+                ctx.fillText('🚡', 0, -45);
             }
 
             ctx.restore();
@@ -3992,20 +4085,120 @@
                 }
             }
 
-            // Update guests
+            // Update guests with state machine
             for (let guest of guests) {
-                guest.x += guest.vx;
-                guest.y += guest.vy;
+                guest.stateTimer--;
 
-                // Wander behavior
-                if (Math.random() < 0.02) {
-                    guest.vx = (Math.random() - 0.5) * 2;
-                    guest.vy = (Math.random() - 0.5) * 1;
+                switch (guest.state) {
+                    case 'wandering':
+                        // Wander around, occasionally look for a lift
+                        guest.x += guest.vx;
+                        guest.y += guest.vy;
+                        if (Math.random() < 0.02) {
+                            guest.vx = (Math.random() - 0.5) * 2;
+                            guest.vy = (Math.random() - 0.5) * 1;
+                        }
+                        // Try to find a lift
+                        if (Math.random() < 0.01) {
+                            const lift = findLift();
+                            if (lift) {
+                                guest.targetBuilding = lift;
+                                guest.state = 'goingToLift';
+                            }
+                        }
+                        break;
+
+                    case 'goingToLift':
+                        // Move toward the lift
+                        if (guest.targetBuilding) {
+                            const liftPos = getBuildingScreenPos(guest.targetBuilding);
+                            const dx = liftPos.x - guest.x;
+                            const dy = liftPos.y - guest.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            if (dist > 20) {
+                                guest.vx = (dx / dist) * 2;
+                                guest.vy = (dy / dist) * 2;
+                                guest.x += guest.vx;
+                                guest.y += guest.vy;
+                            } else {
+                                // Arrived at lift, start riding
+                                guest.state = 'ridingLift';
+                                guest.stateTimer = 180; // 3 seconds riding
+                                guest.happy = true;
+                            }
+                        } else {
+                            guest.state = 'wandering';
+                        }
+                        break;
+
+                    case 'ridingLift':
+                        // Move up the mountain (toward top of screen)
+                        guest.y -= 1.5;
+                        guest.x += (Math.random() - 0.5) * 0.5;
+                        // Add small swaying motion
+                        guest.x += Math.sin(gameTime * 0.1) * 0.3;
+                        if (guest.stateTimer <= 0) {
+                            // Done riding, look for slope
+                            guest.state = 'goingToSlope';
+                            const slope = findSlope();
+                            guest.targetBuilding = slope;
+                        }
+                        break;
+
+                    case 'goingToSlope':
+                        // Move toward a slope
+                        if (guest.targetBuilding) {
+                            const slopePos = getBuildingScreenPos(guest.targetBuilding);
+                            const dx = slopePos.x - guest.x;
+                            const dy = slopePos.y - guest.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            if (dist > 20) {
+                                guest.vx = (dx / dist) * 2;
+                                guest.vy = (dy / dist) * 2;
+                                guest.x += guest.vx;
+                                guest.y += guest.vy;
+                            } else {
+                                // Arrived at slope, start skiing!
+                                guest.state = 'skiing';
+                                guest.stateTimer = 120; // 2 seconds skiing
+                                guest.happy = true;
+                            }
+                        } else {
+                            // No slope found, just ski down anyway
+                            guest.state = 'skiing';
+                            guest.stateTimer = 150;
+                        }
+                        break;
+
+                    case 'skiing':
+                        // Ski down the mountain (fast!)
+                        guest.y += 4;
+                        guest.x += (Math.random() - 0.5) * 3; // Zigzag
+                        // Add ski trail particles
+                        if (Math.random() < 0.3) {
+                            particles.push({
+                                x: guest.x,
+                                y: guest.y,
+                                vx: (Math.random() - 0.5) * 2,
+                                vy: -Math.random() * 1,
+                                size: 3,
+                                color: '#ffffff',
+                                life: 0.5
+                            });
+                        }
+                        if (guest.stateTimer <= 0 || guest.y > canvas.height - 120) {
+                            // Done skiing, back to wandering
+                            guest.state = 'wandering';
+                            guest.targetBuilding = null;
+                            guest.vx = (Math.random() - 0.5) * 2;
+                            guest.vy = (Math.random() - 0.5) * 1;
+                        }
+                        break;
                 }
 
                 // Keep in bounds
-                guest.x = Math.max(100, Math.min(canvas.width - 100, guest.x));
-                guest.y = Math.max(200, Math.min(canvas.height - 100, guest.y));
+                guest.x = Math.max(50, Math.min(canvas.width - 50, guest.x));
+                guest.y = Math.max(100, Math.min(canvas.height - 50, guest.y));
 
                 // Generate income (batched every 10 seconds)
                 guest.incomeTimer--;
@@ -4070,8 +4263,36 @@
                 vy: -Math.random() * 0.5,
                 colorIndex: Math.floor(Math.random() * 5),
                 happy: Math.random() > 0.2,
-                incomeTimer: 300 + Math.random() * 300 // Staggered 10-second collection
+                incomeTimer: 300 + Math.random() * 300,
+                // New: State machine for lift/slope behavior
+                state: 'wandering', // wandering, goingToLift, ridingLift, goingToSlope, skiing
+                targetBuilding: null,
+                stateTimer: 0,
+                size: 1
             });
+        }
+
+        // Find a random lift building
+        function findLift() {
+            const lifts = buildings.filter(b =>
+                ['chairlift', 'gondola', 'magicCarpet', 'tbar', 'cableCar', 'funicular', 'ropeTow', 'quadChair', 'sixPack'].includes(b.type)
+            );
+            return lifts.length > 0 ? lifts[Math.floor(Math.random() * lifts.length)] : null;
+        }
+
+        // Find a random slope building
+        function findSlope() {
+            const slopes = buildings.filter(b =>
+                ['greenSlope', 'blueSlope', 'blackSlope', 'doubleBlack', 'halfpipe', 'skiJump', 'terrainPark', 'tubingHill', 'moguls'].includes(b.type)
+            );
+            return slopes.length > 0 ? slopes[Math.floor(Math.random() * slopes.length)] : null;
+        }
+
+        // Get screen position of a building
+        function getBuildingScreenPos(building) {
+            const pos = gridToScreen(building.gx, building.gy);
+            const terrainH = getTerrainHeight(building.gx, building.gy);
+            return { x: pos.x, y: pos.y - terrainH };
         }
 
         // Add coins with effect
