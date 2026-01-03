@@ -103,6 +103,14 @@
             color: #fc8181;
         }
 
+        .stat-box.gems .value {
+            color: #a78bfa;
+        }
+
+        .stat-box.land .value {
+            color: #60a5fa;
+        }
+
         .category-tabs {
             display: flex;
             gap: 5px;
@@ -313,6 +321,10 @@
                     <div class="label">Coins</div>
                     <div class="value" id="coinCount">500</div>
                 </div>
+                <div class="stat-box gems">
+                    <div class="label">💎 Gems</div>
+                    <div class="value" id="gemCount">0</div>
+                </div>
                 <div class="stat-box guests">
                     <div class="label">Guests</div>
                     <div class="value" id="guestCount">0</div>
@@ -321,8 +333,12 @@
                     <div class="label">Rating</div>
                     <div class="value" id="starRating">1</div>
                 </div>
+                <div class="stat-box land">
+                    <div class="label">Land</div>
+                    <div class="value" id="landSize">40x50</div>
+                </div>
                 <div class="stat-box">
-                    <div class="label">Income/s</div>
+                    <div class="label">Income/10s</div>
                     <div class="value" id="incomeRate">0</div>
                 </div>
             </div>
@@ -340,6 +356,7 @@
                 <button class="tab-btn" data-category="slopes">Slopes</button>
                 <button class="tab-btn" data-category="buildings">Build</button>
                 <button class="tab-btn" data-category="decor">Decor</button>
+                <button class="tab-btn" data-category="shop">Shop</button>
             </div>
 
             <div class="build-menu" id="buildMenu"></div>
@@ -347,6 +364,9 @@
             <div class="action-buttons">
                 <button class="action-btn save" onclick="saveGame()">Save</button>
                 <button class="action-btn delete" onclick="toggleDeleteMode()">Delete</button>
+            </div>
+            <div class="action-buttons">
+                <button class="action-btn" style="background: #805ad5; color: white;" onclick="newGame()">New Resort</button>
             </div>
         </div>
     </div>
@@ -367,6 +387,7 @@
 
         // Game state
         let coins = 1000;
+        let gems = 0;
         let guests = [];
         let animals = [];
         let buildings = [];
@@ -381,11 +402,39 @@
         let isPowderDay = false;
         let powderDayTimer = 0;
 
-        // Grid settings
+        // Land expansion system
+        let landTier = 0;
+        const LAND_TIERS = [
+            { width: 40, height: 50, cost: 0, name: 'Starter' },
+            { width: 60, height: 75, cost: 10, name: 'Small' },
+            { width: 80, height: 100, cost: 25, name: 'Medium' },
+            { width: 100, height: 125, cost: 50, name: 'Large' },
+            { width: 120, height: 150, cost: 100, name: 'Massive' }
+        ];
+
+        // Gem upgrades owned
+        let gemUpgrades = {
+            luckyCharm: false,    // +1 gem per day
+            gemFinder: false,     // Double gem event chance
+            goldenTouch: false    // +1 gem per milestone
+        };
+
+        // Milestone tracking
+        let milestonesReached = {
+            buildings5: false,
+            buildings10: false,
+            buildings20: false,
+            buildings50: false,
+            stars3: false,
+            stars4: false,
+            stars5: false
+        };
+
+        // Grid settings (now dynamic based on land tier)
         const TILE_WIDTH = 64;
         const TILE_HEIGHT = 32;
-        const GRID_WIDTH = 80;
-        const GRID_HEIGHT = 100;
+        let GRID_WIDTH = 40;
+        let GRID_HEIGHT = 50;
         let offsetX = 0;
         let offsetY = 0;
 
@@ -534,6 +583,24 @@
             windmill: { name: 'Windmill', icon: '🌀', cost: 400, income: 22, category: 'decor', width: 2, height: 2, unlockAt: 800 },
             bridge: { name: 'Snow Bridge', icon: '🌉', cost: 250, income: 12, category: 'decor', width: 3, height: 1, unlockAt: 500 },
             gazebo: { name: 'Gazebo', icon: '⛱️', cost: 320, income: 16, category: 'decor', width: 2, height: 2, unlockAt: 650 },
+        };
+
+        // Shop items (purchasable with gems)
+        const SHOP_ITEMS = {
+            // Coin packages
+            coinPouch: { name: 'Coin Pouch', icon: '👛', gemCost: 1, coinReward: 500, type: 'coins', description: '500 coins' },
+            coinBag: { name: 'Coin Bag', icon: '💰', gemCost: 5, coinReward: 3000, type: 'coins', description: '3,000 coins' },
+            coinChest: { name: 'Coin Chest', icon: '🧰', gemCost: 10, coinReward: 7500, type: 'coins', description: '7,500 coins' },
+            coinVault: { name: 'Coin Vault', icon: '🏦', gemCost: 25, coinReward: 25000, type: 'coins', description: '25,000 coins' },
+            // Gem upgrades
+            luckyCharm: { name: 'Lucky Charm', icon: '🍀', gemCost: 15, type: 'upgrade', upgradeKey: 'luckyCharm', description: '+1 gem per day' },
+            gemFinder: { name: 'Gem Finder', icon: '🔮', gemCost: 30, type: 'upgrade', upgradeKey: 'gemFinder', description: '2x gem events' },
+            goldenTouch: { name: 'Golden Touch', icon: '✨', gemCost: 50, type: 'upgrade', upgradeKey: 'goldenTouch', description: '+1 gem per milestone' },
+            // Land expansions
+            landTier1: { name: 'Small Land', icon: '🗺️', gemCost: 10, type: 'land', tier: 1, description: '60x75 tiles' },
+            landTier2: { name: 'Medium Land', icon: '🗺️', gemCost: 25, type: 'land', tier: 2, description: '80x100 tiles' },
+            landTier3: { name: 'Large Land', icon: '🗺️', gemCost: 50, type: 'land', tier: 3, description: '100x125 tiles' },
+            landTier4: { name: 'Massive Land', icon: '🗺️', gemCost: 100, type: 'land', tier: 4, description: '120x150 tiles' }
         };
 
         // Initialize snowflakes
@@ -3362,10 +3429,24 @@
             // Update day/time
             if (gameTime % 1200 === 0) {
                 dayNumber++;
+
+                // Daily gem bonus
+                const dailyGems = 1 + (gemUpgrades.luckyCharm ? 1 : 0);
+                addGems(dailyGems, 'Daily bonus!');
+
                 // Random chance for powder day
                 if (Math.random() < 0.15) {
                     triggerPowderDay();
                 }
+
+                // Random gem event (5% chance, doubled with gemFinder)
+                const gemEventChance = gemUpgrades.gemFinder ? 0.10 : 0.05;
+                if (Math.random() < gemEventChance) {
+                    addGems(2, 'Lucky gem find!');
+                }
+
+                // Check milestones
+                checkMilestones();
             }
 
             // Update powder day
@@ -3441,22 +3522,25 @@
                 guest.x = Math.max(100, Math.min(canvas.width - 100, guest.x));
                 guest.y = Math.max(200, Math.min(canvas.height - 100, guest.y));
 
-                // Generate income
+                // Generate income (batched every 10 seconds)
                 guest.incomeTimer--;
                 if (guest.incomeTimer <= 0) {
-                    const income = isPowderDay ? 2 : 1;
+                    const income = isPowderDay ? 10 : 5;
                     addCoins(income, guest.x, guest.y);
-                    guest.incomeTimer = 120;
+                    guest.incomeTimer = 600;
                 }
             }
 
-            // Building income
-            if (gameTime % 60 === 0) {
+            // Building income (batched every 10 seconds)
+            if (gameTime % 600 === 0) {
+                let totalBuildingIncome = 0;
                 for (let building of buildings) {
                     const def = BUILDINGS[building.type];
-                    const income = def.income * (isPowderDay ? 2 : 1);
-                    const pos = gridToScreen(building.gx, building.gy);
-                    addCoins(income, pos.x, pos.y - getTerrainHeight(building.gx, building.gy));
+                    totalBuildingIncome += def.income * 10; // 10 seconds worth
+                }
+                if (totalBuildingIncome > 0) {
+                    totalBuildingIncome *= (isPowderDay ? 2 : 1);
+                    addCoins(totalBuildingIncome, canvas.width / 2, 100);
                 }
             }
 
@@ -3501,7 +3585,7 @@
                 vy: -Math.random() * 0.5,
                 colorIndex: Math.floor(Math.random() * 5),
                 happy: Math.random() > 0.2,
-                incomeTimer: 60 + Math.random() * 60
+                incomeTimer: 300 + Math.random() * 300 // Staggered 10-second collection
             });
         }
 
@@ -3528,6 +3612,77 @@
                     color: '#f6e05e',
                     life: 1
                 });
+            }
+        }
+
+        // Add gems with effect
+        function addGems(amount, reason) {
+            gems += amount;
+
+            // Show notification
+            showNotification(`💎 +${amount} gem${amount > 1 ? 's' : ''}: ${reason}`);
+
+            // Purple sparkle particles at top of screen
+            for (let i = 0; i < 8; i++) {
+                particles.push({
+                    x: canvas.width / 2 + (Math.random() - 0.5) * 100,
+                    y: 80,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: Math.random() * 2 + 1,
+                    size: 5,
+                    color: '#a78bfa',
+                    life: 1.5
+                });
+            }
+
+            updateUI();
+        }
+
+        // Show notification popup
+        function showNotification(message) {
+            const notif = document.createElement('div');
+            notif.className = 'notification';
+            notif.textContent = message;
+            document.body.appendChild(notif);
+            setTimeout(() => notif.remove(), 2500);
+        }
+
+        // Check and award milestone gems
+        function checkMilestones() {
+            const buildingCount = buildings.length;
+            const rating = calculateRating();
+            const bonusGems = gemUpgrades.goldenTouch ? 2 : 1;
+
+            // Building milestones
+            if (!milestonesReached.buildings5 && buildingCount >= 5) {
+                milestonesReached.buildings5 = true;
+                addGems(bonusGems, 'Built 5 buildings!');
+            }
+            if (!milestonesReached.buildings10 && buildingCount >= 10) {
+                milestonesReached.buildings10 = true;
+                addGems(bonusGems * 2, 'Built 10 buildings!');
+            }
+            if (!milestonesReached.buildings20 && buildingCount >= 20) {
+                milestonesReached.buildings20 = true;
+                addGems(bonusGems * 3, 'Built 20 buildings!');
+            }
+            if (!milestonesReached.buildings50 && buildingCount >= 50) {
+                milestonesReached.buildings50 = true;
+                addGems(bonusGems * 5, 'Built 50 buildings!');
+            }
+
+            // Star rating milestones
+            if (!milestonesReached.stars3 && rating >= 3) {
+                milestonesReached.stars3 = true;
+                addGems(bonusGems * 2, 'Reached 3 stars!');
+            }
+            if (!milestonesReached.stars4 && rating >= 4) {
+                milestonesReached.stars4 = true;
+                addGems(bonusGems * 3, 'Reached 4 stars!');
+            }
+            if (!milestonesReached.stars5 && rating >= 5) {
+                milestonesReached.stars5 = true;
+                addGems(bonusGems * 5, 'Reached 5 stars!');
             }
         }
 
@@ -3558,9 +3713,9 @@
         function calculateIncomeRate() {
             let rate = 0;
             for (let b of buildings) {
-                rate += BUILDINGS[b.type].income;
+                rate += BUILDINGS[b.type].income * 10; // 10 seconds of building income
             }
-            rate += guests.length;
+            rate += guests.length * 5; // 5 coins per guest per 10 seconds
             if (isPowderDay) rate *= 2;
             return rate;
         }
@@ -3568,8 +3723,10 @@
         // Update UI elements
         function updateUI() {
             document.getElementById('coinCount').textContent = Math.floor(coins);
+            document.getElementById('gemCount').textContent = gems;
             document.getElementById('guestCount').textContent = guests.length;
             document.getElementById('starRating').textContent = '⭐'.repeat(calculateRating());
+            document.getElementById('landSize').textContent = `${GRID_WIDTH}x${GRID_HEIGHT}`;
             document.getElementById('incomeRate').textContent = calculateIncomeRate();
 
             // Time display
@@ -3595,6 +3752,12 @@
             const menu = document.getElementById('buildMenu');
             menu.innerHTML = '';
 
+            // Handle shop category separately
+            if (currentCategory === 'shop') {
+                renderShopMenu(menu);
+                return;
+            }
+
             let totalSpent = 0;
             for (let b of buildings) {
                 totalSpent += BUILDINGS[b.type].cost;
@@ -3615,7 +3778,7 @@
                     <div class="icon">${def.icon}</div>
                     <div class="name">${def.name}</div>
                     <div class="cost">${unlocked ? `💰 ${def.cost}` : `🔒 ${def.unlockAt} spent`}</div>
-                    <div class="income">+${def.income}/s</div>
+                    <div class="income">+${def.income * 10}/10s</div>
                 `;
 
                 if (unlocked) {
@@ -3631,6 +3794,94 @@
 
                 menu.appendChild(item);
             }
+        }
+
+        // Render shop menu
+        function renderShopMenu(menu) {
+            // Section headers
+            const sections = [
+                { title: '💰 Coin Packages', items: ['coinPouch', 'coinBag', 'coinChest', 'coinVault'] },
+                { title: '✨ Gem Upgrades', items: ['luckyCharm', 'gemFinder', 'goldenTouch'] },
+                { title: '🗺️ Land Expansion', items: ['landTier1', 'landTier2', 'landTier3', 'landTier4'] }
+            ];
+
+            for (let section of sections) {
+                const header = document.createElement('div');
+                header.style.cssText = 'grid-column: 1 / -1; color: #fff; font-weight: bold; padding: 8px 0 4px; border-bottom: 1px solid rgba(255,255,255,0.2); margin-bottom: 4px;';
+                header.textContent = section.title;
+                menu.appendChild(header);
+
+                for (let key of section.items) {
+                    const def = SHOP_ITEMS[key];
+                    if (!def) continue;
+
+                    // Check if already owned (for upgrades) or unavailable (for land)
+                    let isOwned = false;
+                    let isAvailable = true;
+
+                    if (def.type === 'upgrade') {
+                        isOwned = gemUpgrades[def.upgradeKey];
+                    } else if (def.type === 'land') {
+                        isOwned = landTier >= def.tier;
+                        isAvailable = landTier === def.tier - 1; // Can only buy next tier
+                    }
+
+                    const canAfford = gems >= def.gemCost;
+
+                    const item = document.createElement('div');
+                    item.className = 'build-item' + (isOwned ? ' locked' : '');
+
+                    if (isOwned) {
+                        item.innerHTML = `
+                            <div class="icon">${def.icon}</div>
+                            <div class="name">${def.name}</div>
+                            <div class="cost" style="color: #68d391;">✓ Owned</div>
+                            <div class="income">${def.description}</div>
+                        `;
+                    } else {
+                        item.innerHTML = `
+                            <div class="icon">${def.icon}</div>
+                            <div class="name">${def.name}</div>
+                            <div class="cost" style="color: ${canAfford ? '#a78bfa' : '#fc8181'};">💎 ${def.gemCost}</div>
+                            <div class="income">${def.description}</div>
+                        `;
+
+                        if (canAfford && isAvailable) {
+                            item.onclick = () => purchaseShopItem(key);
+                        } else if (!isAvailable && def.type === 'land') {
+                            item.style.opacity = '0.5';
+                            item.style.cursor = 'not-allowed';
+                        }
+                    }
+
+                    menu.appendChild(item);
+                }
+            }
+        }
+
+        // Purchase shop item
+        function purchaseShopItem(key) {
+            const def = SHOP_ITEMS[key];
+            if (!def || gems < def.gemCost) return;
+
+            gems -= def.gemCost;
+
+            if (def.type === 'coins') {
+                coins += def.coinReward;
+                showNotification(`Purchased ${def.coinReward.toLocaleString()} coins!`);
+            } else if (def.type === 'upgrade') {
+                gemUpgrades[def.upgradeKey] = true;
+                showNotification(`Unlocked ${def.name}!`);
+            } else if (def.type === 'land') {
+                landTier = def.tier;
+                GRID_WIDTH = LAND_TIERS[landTier].width;
+                GRID_HEIGHT = LAND_TIERS[landTier].height;
+                showNotification(`Expanded land to ${GRID_WIDTH}x${GRID_HEIGHT}!`);
+            }
+
+            updateUI();
+            renderBuildMenu();
+            saveGame();
         }
 
         // Tab switching
@@ -3655,12 +3906,41 @@
         function saveGame() {
             const saveData = {
                 coins: coins,
+                gems: gems,
                 buildings: buildings,
                 dayNumber: dayNumber,
-                gameTime: gameTime
+                gameTime: gameTime,
+                landTier: landTier,
+                gemUpgrades: gemUpgrades,
+                milestonesReached: milestonesReached
             };
             localStorage.setItem('skiResortSave', JSON.stringify(saveData));
             showNotification('Game Saved!');
+        }
+
+        // New game - reset to starter resort
+        function newGame() {
+            if (confirm('Start a new resort? This will delete your current save!')) {
+                localStorage.removeItem('skiResortSave');
+
+                // Reset all state
+                landTier = 0;
+                GRID_WIDTH = LAND_TIERS[0].width;
+                GRID_HEIGHT = LAND_TIERS[0].height;
+                gemUpgrades = { luckyCharm: false, gemFinder: false, goldenTouch: false };
+                milestonesReached = {
+                    buildings5: false, buildings10: false, buildings20: false, buildings50: false,
+                    stars3: false, stars4: false, stars5: false
+                };
+                dayNumber = 1;
+                gameTime = 0;
+                guests = [];
+
+                createStarterResort();
+                updateUI();
+                renderBuildMenu();
+                showNotification('Welcome to your new resort!');
+            }
         }
 
         // Load game
@@ -3668,20 +3948,105 @@
             const saved = localStorage.getItem('skiResortSave');
             if (saved) {
                 const data = JSON.parse(saved);
-                coins = data.coins;
-                buildings = data.buildings;
+                coins = data.coins || 1000;
+                gems = data.gems || 0;
+                buildings = data.buildings || [];
                 dayNumber = data.dayNumber || 1;
                 gameTime = data.gameTime || 0;
+                landTier = data.landTier || 0;
+
+                // Load upgrades
+                if (data.gemUpgrades) {
+                    gemUpgrades = { ...gemUpgrades, ...data.gemUpgrades };
+                }
+                if (data.milestonesReached) {
+                    milestonesReached = { ...milestonesReached, ...data.milestonesReached };
+                }
+
+                // Set grid size based on land tier
+                GRID_WIDTH = LAND_TIERS[landTier].width;
+                GRID_HEIGHT = LAND_TIERS[landTier].height;
+            } else {
+                // Create a realistic starter resort layout
+                createStarterResort();
             }
         }
 
-        // Show notification
-        function showNotification(text) {
-            const notif = document.createElement('div');
-            notif.className = 'notification';
-            notif.textContent = text;
-            document.body.appendChild(notif);
-            setTimeout(() => notif.remove(), 2500);
+        // Create a nice starter resort layout
+        function createStarterResort() {
+            buildings = [];
+            coins = 500; // Start with some coins after building the starter resort
+            gems = 3;    // Start with a few gems
+
+            // Base area (lower part of map) - Lodge and amenities
+            // Main Lodge at the center-bottom
+            buildings.push({ type: 'lodge', gx: 18, gy: 40 });
+
+            // Food options near the lodge
+            buildings.push({ type: 'hotChocolate', gx: 16, gy: 42 });
+            buildings.push({ type: 'pretzelCart', gx: 22, gy: 42 });
+
+            // Rental and services
+            buildings.push({ type: 'rentalShop', gx: 14, gy: 40 });
+            buildings.push({ type: 'ticketBooth', gx: 24, gy: 40 });
+
+            // Decorations around base area
+            buildings.push({ type: 'bench', gx: 17, gy: 43 });
+            buildings.push({ type: 'bench', gx: 21, gy: 43 });
+            buildings.push({ type: 'lamp', gx: 15, gy: 43 });
+            buildings.push({ type: 'lamp', gx: 23, gy: 43 });
+            buildings.push({ type: 'flag', gx: 19, gy: 38 });
+            buildings.push({ type: 'flag', gx: 20, gy: 38 });
+
+            // === BEGINNER AREA (left side) ===
+            // Magic carpet for beginners
+            buildings.push({ type: 'magicCarpet', gx: 8, gy: 35 });
+
+            // Easy slopes near magic carpet
+            buildings.push({ type: 'greenSlope', gx: 6, gy: 32 });
+            buildings.push({ type: 'greenSlope', gx: 10, gy: 30 });
+
+            // Rope tow for learning area
+            buildings.push({ type: 'ropeTow', gx: 4, gy: 28 });
+
+            // Trees around beginner area
+            buildings.push({ type: 'pineTree', gx: 3, gy: 34 });
+            buildings.push({ type: 'pineTree', gx: 12, gy: 33 });
+            buildings.push({ type: 'snowman', gx: 5, gy: 38 });
+
+            // === INTERMEDIATE AREA (center) ===
+            // Main chairlift
+            buildings.push({ type: 'chairlift', gx: 18, gy: 25 });
+
+            // Medium slopes accessible from chairlift
+            buildings.push({ type: 'blueSlope', gx: 15, gy: 20 });
+            buildings.push({ type: 'blueSlope', gx: 21, gy: 22 });
+
+            // T-bar for variety
+            buildings.push({ type: 'tbar', gx: 25, gy: 28 });
+
+            // Cross-country trail
+            buildings.push({ type: 'crossCountry', gx: 10, gy: 18 });
+
+            // === EXPERT AREA (right side, higher up) ===
+            // Quad chair for expert area
+            buildings.push({ type: 'quadChair', gx: 30, gy: 15 });
+
+            // Hard slopes
+            buildings.push({ type: 'blackSlope', gx: 33, gy: 10 });
+            buildings.push({ type: 'moguls', gx: 28, gy: 8 });
+
+            // Terrain park near expert area
+            buildings.push({ type: 'terrainPark', gx: 25, gy: 5 });
+
+            // More trees and scenery
+            buildings.push({ type: 'pineTree', gx: 35, gy: 12 });
+            buildings.push({ type: 'pineTree', gx: 32, gy: 18 });
+            buildings.push({ type: 'pineTree', gx: 27, gy: 14 });
+
+            // === SCENIC DECORATIONS ===
+            buildings.push({ type: 'firePit', gx: 12, gy: 38 });
+            buildings.push({ type: 'snowman', gx: 26, gy: 35 });
         }
 
         // Mouse position tracking
@@ -3742,6 +4107,7 @@
 
                     showNotification(`Built ${def.name}!`);
                     renderBuildMenu();
+                    checkMilestones();
                 }
             }
         });
