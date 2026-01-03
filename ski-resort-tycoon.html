@@ -308,13 +308,103 @@
             font-size: 2em;
             margin-bottom: 10px;
         }
+
+        /* Name entry modal */
+        .name-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .name-modal-content {
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        .name-modal h1 {
+            color: #fff;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .name-modal p {
+            color: #a0aec0;
+            margin-bottom: 20px;
+        }
+
+        .name-modal input {
+            padding: 15px 25px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 10px;
+            width: 250px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .name-modal button {
+            padding: 15px 40px;
+            font-size: 1.2em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .name-modal button:hover {
+            transform: scale(1.05);
+        }
+
+        .player-name-display {
+            color: #a0aec0;
+            font-size: 0.85em;
+            text-align: center;
+            padding: 5px;
+        }
+
+        .player-name-display .name {
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .player-name-display .role {
+            color: #ecc94b;
+        }
+
+        .player-name-display .admin-role {
+            color: #68d391;
+        }
     </style>
 </head>
 <body>
+    <!-- Name entry modal -->
+    <div class="name-modal" id="nameModal">
+        <div class="name-modal-content">
+            <h1>⛷️ Welcome to Niseko!</h1>
+            <p>Enter your name to start building</p>
+            <input type="text" id="playerNameInput" placeholder="Your name..." maxlength="20">
+            <br>
+            <button onclick="startGame()">Start Building!</button>
+        </div>
+    </div>
+
     <div class="game-wrapper">
         <canvas id="gameCanvas"></canvas>
         <div class="side-panel">
             <div class="panel-header">Build a Ski Resort!</div>
+            <div class="player-name-display" id="playerDisplay"></div>
 
             <div class="stats-bar">
                 <div class="stat-box coins">
@@ -413,6 +503,12 @@
         let powderDayTimer = 0;
         let resortOpen = false; // Controls if guests/animals spawn
         let adminMode = false; // Creator mode - free builds, unlimited resources
+
+        // Player name and roles
+        let playerName = '';
+        let playerRole = 'player'; // 'creator', 'admin', or 'player'
+        const CREATOR_NAME = 'Kery'; // The game creator - gets creator mode
+        const ADMIN_NAMES = ['Admin1', 'Admin2']; // Add friend names here for admin access
 
         // Land expansion system
         let landTier = 0;
@@ -4278,10 +4374,70 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // Initialize
-        loadGame();
-        renderBuildMenu();
-        gameLoop();
+        // Start game after name entry
+        function startGame() {
+            const nameInput = document.getElementById('playerNameInput');
+            const name = nameInput.value.trim();
+
+            if (!name) {
+                alert('Please enter your name!');
+                return;
+            }
+
+            playerName = name;
+
+            // Check role based on name (case-insensitive)
+            const lowerName = name.toLowerCase();
+            if (lowerName === CREATOR_NAME.toLowerCase()) {
+                playerRole = 'creator';
+                adminMode = true;
+                coins = 999999;
+                gems = 9999;
+            } else if (ADMIN_NAMES.some(n => n.toLowerCase() === lowerName)) {
+                playerRole = 'admin';
+                adminMode = true;
+                coins = 999999;
+                gems = 9999;
+            } else {
+                playerRole = 'player';
+            }
+
+            // Update player display
+            const display = document.getElementById('playerDisplay');
+            if (playerRole === 'creator') {
+                display.innerHTML = `Playing as: <span class="name">${playerName}</span> <span class="role">👑 CREATOR</span>`;
+                document.getElementById('adminBtn').style.display = 'block';
+                document.getElementById('creatorBadge').style.display = 'block';
+            } else if (playerRole === 'admin') {
+                display.innerHTML = `Playing as: <span class="name">${playerName}</span> <span class="admin-role">⭐ ADMIN</span>`;
+                document.getElementById('adminBtn').style.display = 'none';
+            } else {
+                display.innerHTML = `Playing as: <span class="name">${playerName}</span>`;
+                document.getElementById('adminBtn').style.display = 'none';
+            }
+
+            // Hide name modal
+            document.getElementById('nameModal').style.display = 'none';
+
+            // Start the game
+            loadGame();
+            renderBuildMenu();
+            updateUI();
+            gameLoop();
+
+            if (playerRole === 'creator') {
+                showNotification('👑 Welcome back, Creator!');
+            } else if (playerRole === 'admin') {
+                showNotification('⭐ Welcome, Admin! You have special powers!');
+            } else {
+                showNotification(`Welcome, ${playerName}! Start building!`);
+            }
+        }
+
+        // Allow Enter key to start game
+        document.getElementById('playerNameInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') startGame();
+        });
     </script>
 </body>
 </html>
