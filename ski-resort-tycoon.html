@@ -4055,81 +4055,77 @@
             }
         }
 
-        // Create a nice starter resort layout
+        // Create a nice starter resort layout - GENEROUS to make up for lost saves!
         function createStarterResort() {
             buildings = [];
-            coins = 500; // Start with some coins after building the starter resort
-            gems = 3;    // Start with a few gems
+            coins = 10000; // Generous starting coins!
+            gems = 25;     // Plenty of gems to get started!
 
-            // Base area (lower part of map) - Lodge and amenities
-            // Main Lodge at the center-bottom
-            buildings.push({ type: 'lodge', gx: 18, gy: 40 });
+            // === BASE VILLAGE (bottom) ===
+            buildings.push({ type: 'lodge', gx: 35, gy: 90 });
+            buildings.push({ type: 'restaurant', gx: 40, gy: 90 });
+            buildings.push({ type: 'hotel', gx: 30, gy: 88 });
+            buildings.push({ type: 'rentalShop', gx: 45, gy: 92 });
+            buildings.push({ type: 'ticketBooth', gx: 28, gy: 92 });
+            buildings.push({ type: 'hotChocolate', gx: 48, gy: 90 });
+            buildings.push({ type: 'bakery', gx: 50, gy: 88 });
+            buildings.push({ type: 'giftShop', gx: 25, gy: 90 });
+            buildings.push({ type: 'firstAid', gx: 52, gy: 92 });
+            buildings.push({ type: 'skiSchool', gx: 22, gy: 88 });
 
-            // Food options near the lodge
-            buildings.push({ type: 'hotChocolate', gx: 16, gy: 42 });
-            buildings.push({ type: 'pretzelCart', gx: 22, gy: 42 });
-
-            // Rental and services
-            buildings.push({ type: 'rentalShop', gx: 14, gy: 40 });
-            buildings.push({ type: 'ticketBooth', gx: 24, gy: 40 });
-
-            // Decorations around base area
-            buildings.push({ type: 'bench', gx: 17, gy: 43 });
-            buildings.push({ type: 'bench', gx: 21, gy: 43 });
-            buildings.push({ type: 'lamp', gx: 15, gy: 43 });
-            buildings.push({ type: 'lamp', gx: 23, gy: 43 });
-            buildings.push({ type: 'flag', gx: 19, gy: 38 });
-            buildings.push({ type: 'flag', gx: 20, gy: 38 });
+            // Base area decorations
+            buildings.push({ type: 'bench', gx: 33, gy: 94 });
+            buildings.push({ type: 'bench', gx: 43, gy: 94 });
+            buildings.push({ type: 'lamp', gx: 30, gy: 95 });
+            buildings.push({ type: 'lamp', gx: 46, gy: 95 });
+            buildings.push({ type: 'flag', gx: 38, gy: 86 });
+            buildings.push({ type: 'flag', gx: 40, gy: 86 });
+            buildings.push({ type: 'firePit', gx: 36, gy: 95 });
 
             // === BEGINNER AREA (left side) ===
-            // Magic carpet for beginners
-            buildings.push({ type: 'magicCarpet', gx: 8, gy: 35 });
-
-            // Easy slopes near magic carpet
-            buildings.push({ type: 'greenSlope', gx: 6, gy: 32 });
-            buildings.push({ type: 'greenSlope', gx: 10, gy: 30 });
-
-            // Rope tow for learning area
-            buildings.push({ type: 'ropeTow', gx: 4, gy: 28 });
-
-            // Trees around beginner area
-            buildings.push({ type: 'pineTree', gx: 3, gy: 34 });
-            buildings.push({ type: 'pineTree', gx: 12, gy: 33 });
-            buildings.push({ type: 'snowman', gx: 5, gy: 38 });
+            buildings.push({ type: 'magicCarpet', gx: 10, gy: 75 });
+            buildings.push({ type: 'ropeTow', gx: 6, gy: 70 });
+            buildings.push({ type: 'greenSlope', gx: 8, gy: 65 });
+            buildings.push({ type: 'greenSlope', gx: 12, gy: 60 });
+            buildings.push({ type: 'greenSlope', gx: 6, gy: 55 });
+            buildings.push({ type: 'tubingHill', gx: 14, gy: 68 });
+            buildings.push({ type: 'pineTree', gx: 4, gy: 72 });
+            buildings.push({ type: 'pineTree', gx: 16, gy: 62 });
+            buildings.push({ type: 'snowman', gx: 10, gy: 80 });
 
             // === INTERMEDIATE AREA (center) ===
-            // Main chairlift
-            buildings.push({ type: 'chairlift', gx: 18, gy: 25 });
+            buildings.push({ type: 'chairlift', gx: 35, gy: 65 });
+            buildings.push({ type: 'chairlift', gx: 42, gy: 60 });
+            buildings.push({ type: 'tbar', gx: 30, gy: 70 });
+            buildings.push({ type: 'blueSlope', gx: 32, gy: 50 });
+            buildings.push({ type: 'blueSlope', gx: 38, gy: 45 });
+            buildings.push({ type: 'blueSlope', gx: 44, gy: 52 });
+            buildings.push({ type: 'crossCountry', gx: 25, gy: 55 });
+            buildings.push({ type: 'iceRink', gx: 48, gy: 75 });
+            buildings.push({ type: 'pineTree', gx: 28, gy: 58 });
+            buildings.push({ type: 'pineTree', gx: 50, gy: 48 });
 
-            // Medium slopes accessible from chairlift
-            buildings.push({ type: 'blueSlope', gx: 15, gy: 20 });
-            buildings.push({ type: 'blueSlope', gx: 21, gy: 22 });
+            // === EXPERT AREA (right/top) ===
+            buildings.push({ type: 'quadChair', gx: 60, gy: 50 });
+            buildings.push({ type: 'gondola', gx: 55, gy: 40 });
+            buildings.push({ type: 'blackSlope', gx: 62, gy: 35 });
+            buildings.push({ type: 'blackSlope', gx: 58, gy: 28 });
+            buildings.push({ type: 'moguls', gx: 65, gy: 42 });
+            buildings.push({ type: 'doubleBlack', gx: 68, gy: 30 });
+            buildings.push({ type: 'terrainPark', gx: 55, gy: 22 });
+            buildings.push({ type: 'halfpipe', gx: 62, gy: 18 });
+            buildings.push({ type: 'skiJump', gx: 50, gy: 15 });
+            buildings.push({ type: 'pineTree', gx: 70, gy: 38 });
+            buildings.push({ type: 'pineTree', gx: 53, gy: 32 });
+            buildings.push({ type: 'pineTree', gx: 72, gy: 25 });
 
-            // T-bar for variety
-            buildings.push({ type: 'tbar', gx: 25, gy: 28 });
-
-            // Cross-country trail
-            buildings.push({ type: 'crossCountry', gx: 10, gy: 18 });
-
-            // === EXPERT AREA (right side, higher up) ===
-            // Quad chair for expert area
-            buildings.push({ type: 'quadChair', gx: 30, gy: 15 });
-
-            // Hard slopes
-            buildings.push({ type: 'blackSlope', gx: 33, gy: 10 });
-            buildings.push({ type: 'moguls', gx: 28, gy: 8 });
-
-            // Terrain park near expert area
-            buildings.push({ type: 'terrainPark', gx: 25, gy: 5 });
-
-            // More trees and scenery
-            buildings.push({ type: 'pineTree', gx: 35, gy: 12 });
-            buildings.push({ type: 'pineTree', gx: 32, gy: 18 });
-            buildings.push({ type: 'pineTree', gx: 27, gy: 14 });
-
-            // === SCENIC DECORATIONS ===
-            buildings.push({ type: 'firePit', gx: 12, gy: 38 });
-            buildings.push({ type: 'snowman', gx: 26, gy: 35 });
+            // === AMENITIES scattered around ===
+            buildings.push({ type: 'cabin', gx: 18, gy: 82 });
+            buildings.push({ type: 'spa', gx: 55, gy: 80 });
+            buildings.push({ type: 'hotTub', gx: 60, gy: 85 });
+            buildings.push({ type: 'igloo', gx: 20, gy: 50 });
+            buildings.push({ type: 'snowman', gx: 45, gy: 78 });
+            buildings.push({ type: 'snowman', gx: 65, gy: 55 });
         }
 
         // Mouse position tracking
