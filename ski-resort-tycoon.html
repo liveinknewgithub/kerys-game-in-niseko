@@ -241,6 +241,16 @@
             color: white;
         }
 
+        .action-btn.hammer {
+            background: #ed8936;
+            color: white;
+        }
+
+        .action-btn.hammer.active {
+            background: #c05621;
+            box-shadow: 0 0 10px #ed8936;
+        }
+
         .action-btn:hover {
             transform: translateY(-2px);
             filter: brightness(1.1);
@@ -453,7 +463,10 @@
 
             <div class="action-buttons">
                 <button class="action-btn save" onclick="saveGame()">Save</button>
-                <button class="action-btn delete" onclick="toggleDeleteMode()">Reset All</button>
+                <button class="action-btn hammer" id="hammerBtn" onclick="toggleHammerMode()">🔨 Hammer</button>
+            </div>
+            <div class="action-buttons">
+                <button class="action-btn delete" onclick="resetGame()">Reset All</button>
             </div>
             <div class="action-buttons">
                 <button class="action-btn" style="background: #805ad5; color: white;" onclick="newGame()">Reorganize</button>
@@ -3895,7 +3908,9 @@
                     item.onclick = () => {
                         if (deleteMode) {
                             deleteMode = false;
-                            document.querySelector('.action-btn.delete').style.background = '#fc8181';
+                            const hammerBtn = document.getElementById('hammerBtn');
+                            hammerBtn.classList.remove('active');
+                            hammerBtn.textContent = '🔨 Hammer';
                         }
                         selectedBuilding = selectedBuilding === key ? null : key;
                         renderBuildMenu();
@@ -4004,8 +4019,24 @@
             };
         });
 
+        // Toggle hammer mode for demolishing buildings
+        function toggleHammerMode() {
+            deleteMode = !deleteMode;
+            selectedBuilding = null;
+            const btn = document.getElementById('hammerBtn');
+            if (deleteMode) {
+                btn.classList.add('active');
+                btn.textContent = '🔨 Hammering!';
+                showNotification('Hammer mode ON - Click buildings to demolish (50% refund)');
+            } else {
+                btn.classList.remove('active');
+                btn.textContent = '🔨 Hammer';
+            }
+            renderBuildMenu();
+        }
+
         // Delete everything and start fresh
-        function toggleDeleteMode() {
+        function resetGame() {
             if (confirm('Delete EVERYTHING and start fresh? You will get 10,000 coins and 25 gems!')) {
                 localStorage.removeItem('skiResortSave');
 
@@ -4023,6 +4054,11 @@
                 guests = [];
                 deleteMode = false;
                 selectedBuilding = null;
+
+                // Reset hammer button UI
+                const hammerBtn = document.getElementById('hammerBtn');
+                hammerBtn.classList.remove('active');
+                hammerBtn.textContent = '🔨 Hammer';
 
                 createStarterResort();
                 updateUI();
