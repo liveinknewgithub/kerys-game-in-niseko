@@ -144,8 +144,10 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 8px;
-            max-height: 400px;
+            min-height: 200px;
+            max-height: 300px;
             overflow-y: auto;
+            flex-shrink: 0;
         }
 
         .build-item {
