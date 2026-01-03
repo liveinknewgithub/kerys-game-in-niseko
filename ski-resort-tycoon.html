@@ -368,6 +368,9 @@
             <div class="action-buttons">
                 <button class="action-btn" style="background: #805ad5; color: white;" onclick="newGame()">Reorganize</button>
             </div>
+            <div class="action-buttons">
+                <button class="action-btn" id="openResortBtn" style="background: #38a169; color: white;" onclick="toggleResortOpen()">Are you ready?</button>
+            </div>
         </div>
     </div>
 
@@ -401,6 +404,7 @@
         let dayNumber = 1;
         let isPowderDay = false;
         let powderDayTimer = 0;
+        let resortOpen = false; // Controls if guests/animals spawn
 
         // Land expansion system
         let landTier = 0;
@@ -650,7 +654,7 @@
                 });
             }
         }
-        spawnAnimals();
+        // Don't spawn animals automatically - wait for "Are you ready?" button
 
         // Convert grid to screen coordinates (isometric)
         function gridToScreen(gx, gy) {
@@ -3501,10 +3505,12 @@
                 }
             }
 
-            // Spawn guests based on buildings
-            const maxGuests = calculateMaxGuests();
-            if (guests.length < maxGuests && Math.random() < 0.02) {
-                spawnGuest();
+            // Spawn guests based on buildings (only when resort is open)
+            if (resortOpen) {
+                const maxGuests = calculateMaxGuests();
+                if (guests.length < maxGuests && Math.random() < 0.02) {
+                    spawnGuest();
+                }
             }
 
             // Update guests
@@ -3919,6 +3925,27 @@
                 renderBuildMenu();
                 saveGame();
                 showNotification('Fresh start! Enjoy your new resort!');
+            }
+        }
+
+        // Toggle resort open/closed (controls guests and animals)
+        function toggleResortOpen() {
+            resortOpen = !resortOpen;
+            const btn = document.getElementById('openResortBtn');
+
+            if (resortOpen) {
+                // Open the resort - spawn animals and start guests
+                spawnAnimals();
+                btn.textContent = 'Close Resort';
+                btn.style.background = '#e53e3e';
+                showNotification('Resort is OPEN! Guests and animals arriving!');
+            } else {
+                // Close the resort - clear all guests and animals
+                guests = [];
+                animals = [];
+                btn.textContent = 'Are you ready?';
+                btn.style.background = '#38a169';
+                showNotification('Resort CLOSED. Build in peace!');
             }
         }
 
