@@ -371,6 +371,13 @@
             <div class="action-buttons">
                 <button class="action-btn" id="openResortBtn" style="background: #38a169; color: white;" onclick="toggleResortOpen()">Are you ready?</button>
             </div>
+            <div class="action-buttons">
+                <button class="action-btn" id="adminBtn" style="background: #ecc94b; color: #1a202c;" onclick="toggleAdmin()">👑 Creator Mode</button>
+            </div>
+            <div id="creatorBadge" style="display: none; text-align: center; color: #ecc94b; font-size: 0.8em; padding: 5px; background: rgba(236,201,75,0.1); border-radius: 5px; margin-top: 5px;">
+                👑 CREATOR MODE ACTIVE 👑<br>
+                <span style="font-size: 0.9em;">Free builds • Unlimited resources</span>
+            </div>
         </div>
     </div>
 
@@ -405,6 +412,7 @@
         let isPowderDay = false;
         let powderDayTimer = 0;
         let resortOpen = false; // Controls if guests/animals spawn
+        let adminMode = false; // Creator mode - free builds, unlimited resources
 
         // Land expansion system
         let landTier = 0;
@@ -3772,8 +3780,8 @@
             for (let [key, def] of Object.entries(BUILDINGS)) {
                 if (def.category !== currentCategory) continue;
 
-                const unlocked = totalSpent >= def.unlockAt;
-                const canAfford = coins >= def.cost;
+                const unlocked = adminMode || totalSpent >= def.unlockAt; // All unlocked in creator mode!
+                const canAfford = adminMode || coins >= def.cost;
 
                 const item = document.createElement('div');
                 item.className = 'build-item' +
@@ -3947,6 +3955,29 @@
                 btn.style.background = '#38a169';
                 showNotification('Resort CLOSED. Build in peace!');
             }
+        }
+
+        // Toggle creator/admin mode
+        function toggleAdmin() {
+            adminMode = !adminMode;
+            const btn = document.getElementById('adminBtn');
+            const badge = document.getElementById('creatorBadge');
+
+            if (adminMode) {
+                // Enable creator mode - unlimited everything!
+                coins = 999999;
+                gems = 9999;
+                btn.textContent = '👑 Creator ON';
+                btn.style.background = '#f6e05e';
+                badge.style.display = 'block';
+                showNotification('👑 CREATOR MODE ACTIVATED! Free builds!');
+            } else {
+                btn.textContent = '👑 Creator Mode';
+                btn.style.background = '#ecc94b';
+                badge.style.display = 'none';
+                showNotification('Creator mode disabled');
+            }
+            updateUI();
         }
 
         // Save game
@@ -4143,8 +4174,9 @@
                 }
             } else if (selectedBuilding) {
                 const def = BUILDINGS[selectedBuilding];
-                if (coins >= def.cost && isValidPosition(grid.gx, grid.gy, def.width, def.height)) {
-                    coins -= def.cost;
+                const canAfford = adminMode || coins >= def.cost;
+                if (canAfford && isValidPosition(grid.gx, grid.gy, def.width, def.height)) {
+                    if (!adminMode) coins -= def.cost; // Free in creator mode!
                     buildings.push({
                         type: selectedBuilding,
                         gx: grid.gx,
