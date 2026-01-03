@@ -366,7 +366,7 @@
                 <button class="action-btn delete" onclick="toggleDeleteMode()">Delete</button>
             </div>
             <div class="action-buttons">
-                <button class="action-btn" style="background: #805ad5; color: white;" onclick="newGame()">New Resort</button>
+                <button class="action-btn" style="background: #805ad5; color: white;" onclick="newGame()">Reorganize</button>
             </div>
         </div>
     </div>
@@ -3918,28 +3918,159 @@
             showNotification('Game Saved!');
         }
 
-        // New game - reset to starter resort
+        // Reorganize resort - keeps coins/gems/progress but rearranges buildings
         function newGame() {
-            if (confirm('Start a new resort? This will delete your current save!')) {
-                localStorage.removeItem('skiResortSave');
-
-                // Reset all state
-                landTier = 0;
-                GRID_WIDTH = LAND_TIERS[0].width;
-                GRID_HEIGHT = LAND_TIERS[0].height;
-                gemUpgrades = { luckyCharm: false, gemFinder: false, goldenTouch: false };
-                milestonesReached = {
-                    buildings5: false, buildings10: false, buildings20: false, buildings50: false,
-                    stars3: false, stars4: false, stars5: false
-                };
-                dayNumber = 1;
-                gameTime = 0;
-                guests = [];
-
-                createStarterResort();
+            if (confirm('Reorganize your resort into a realistic layout? Your coins, gems, and progress will be kept!')) {
+                reorganizeResort();
                 updateUI();
                 renderBuildMenu();
-                showNotification('Welcome to your new resort!');
+                saveGame();
+                showNotification('Resort reorganized!');
+            }
+        }
+
+        // Reorganize existing buildings into a realistic ski resort layout
+        function reorganizeResort() {
+            // Group buildings by type/category
+            const lifts = buildings.filter(b => BUILDINGS[b.type]?.category === 'lifts');
+            const slopes = buildings.filter(b => BUILDINGS[b.type]?.category === 'slopes');
+            const foodAndBuildings = buildings.filter(b => BUILDINGS[b.type]?.category === 'buildings');
+            const decor = buildings.filter(b => BUILDINGS[b.type]?.category === 'decor');
+
+            // Separate slopes by difficulty
+            const easySlopes = slopes.filter(b => ['greenSlope'].includes(b.type));
+            const mediumSlopes = slopes.filter(b => ['blueSlope', 'crossCountry', 'tubingHill', 'iceRink'].includes(b.type));
+            const hardSlopes = slopes.filter(b => ['blackSlope', 'doubleBlack', 'moguls', 'halfpipe', 'skiJump', 'terrainPark', 'bobsled', 'snowPark', 'raceCourse', 'glade'].includes(b.type));
+            const otherSlopes = slopes.filter(b => !easySlopes.includes(b) && !mediumSlopes.includes(b) && !hardSlopes.includes(b));
+
+            // Separate lifts by type
+            const beginnerLifts = lifts.filter(b => ['magicCarpet', 'ropeTow', 'tbar'].includes(b.type));
+            const mainLifts = lifts.filter(b => ['chairlift', 'quadChair', 'sixPack'].includes(b.type));
+            const advancedLifts = lifts.filter(b => ['gondola', 'cableCar', 'funicular', 'helicopter'].includes(b.type));
+            const otherLifts = lifts.filter(b => !beginnerLifts.includes(b) && !mainLifts.includes(b) && !advancedLifts.includes(b));
+
+            // Clear and rebuild with organized layout
+            buildings = [];
+
+            // === BASE AREA (bottom, y: 35-45) - Lodge, food, services ===
+            let baseX = 12;
+            let baseY = GRID_HEIGHT - 8;
+            for (let b of foodAndBuildings) {
+                const def = BUILDINGS[b.type];
+                if (def && isValidPosition(baseX, baseY, def.width, def.height)) {
+                    buildings.push({ type: b.type, gx: baseX, gy: baseY });
+                    baseX += def.width + 1;
+                    if (baseX > GRID_WIDTH - 5) { baseX = 12; baseY += 3; }
+                }
+            }
+
+            // === BEGINNER AREA (left side) ===
+            let beginnerX = 3;
+            let beginnerY = GRID_HEIGHT - 18;
+            // Place beginner lifts
+            for (let b of beginnerLifts) {
+                const def = BUILDINGS[b.type];
+                if (def && isValidPosition(beginnerX, beginnerY, def.width, def.height)) {
+                    buildings.push({ type: b.type, gx: beginnerX, gy: beginnerY });
+                    beginnerX += def.width + 2;
+                }
+            }
+            // Place easy slopes nearby
+            beginnerX = 2;
+            beginnerY = GRID_HEIGHT - 22;
+            for (let b of easySlopes) {
+                const def = BUILDINGS[b.type];
+                if (def && isValidPosition(beginnerX, beginnerY, def.width, def.height)) {
+                    buildings.push({ type: b.type, gx: beginnerX, gy: beginnerY });
+                    beginnerX += def.width + 1;
+                    if (beginnerX > 12) { beginnerX = 2; beginnerY -= 4; }
+                }
+            }
+
+            // === INTERMEDIATE AREA (center) ===
+            let midX = Math.floor(GRID_WIDTH / 2) - 5;
+            let midY = GRID_HEIGHT - 20;
+            // Place main lifts
+            for (let b of mainLifts) {
+                const def = BUILDINGS[b.type];
+                if (def && isValidPosition(midX, midY, def.width, def.height)) {
+                    buildings.push({ type: b.type, gx: midX, gy: midY });
+                    midX += def.width + 3;
+                }
+            }
+            // Place medium slopes
+            midX = Math.floor(GRID_WIDTH / 2) - 6;
+            midY = GRID_HEIGHT - 28;
+            for (let b of mediumSlopes) {
+                const def = BUILDINGS[b.type];
+                if (def && isValidPosition(midX, midY, def.width, def.height)) {
+                    buildings.push({ type: b.type, gx: midX, gy: midY });
+                    midX += def.width + 1;
+                    if (midX > GRID_WIDTH / 2 + 8) { midX = Math.floor(GRID_WIDTH / 2) - 6; midY -= 5; }
+                }
+            }
+
+            // === EXPERT AREA (right/top) ===
+            let expertX = GRID_WIDTH - 15;
+            let expertY = GRID_HEIGHT - 30;
+            // Place advanced lifts
+            for (let b of advancedLifts) {
+                const def = BUILDINGS[b.type];
+                if (def && isValidPosition(expertX, expertY, def.width, def.height)) {
+                    buildings.push({ type: b.type, gx: expertX, gy: expertY });
+                    expertX += def.width + 2;
+                }
+            }
+            // Place hard slopes and terrain parks
+            expertX = GRID_WIDTH - 18;
+            expertY = GRID_HEIGHT - 38;
+            for (let b of hardSlopes) {
+                const def = BUILDINGS[b.type];
+                if (def && isValidPosition(expertX, expertY, def.width, def.height)) {
+                    buildings.push({ type: b.type, gx: expertX, gy: expertY });
+                    expertX += def.width + 1;
+                    if (expertX > GRID_WIDTH - 3) { expertX = GRID_WIDTH - 18; expertY -= 5; }
+                }
+            }
+
+            // === DECORATIONS (scattered around) ===
+            const decorSpots = [
+                {x: 2, y: GRID_HEIGHT - 10}, {x: 10, y: GRID_HEIGHT - 12},
+                {x: GRID_WIDTH - 8, y: GRID_HEIGHT - 10}, {x: GRID_WIDTH - 5, y: GRID_HEIGHT - 15},
+                {x: 5, y: GRID_HEIGHT - 25}, {x: 12, y: GRID_HEIGHT - 28},
+                {x: GRID_WIDTH - 10, y: GRID_HEIGHT - 25}, {x: GRID_WIDTH - 6, y: GRID_HEIGHT - 35},
+                {x: 8, y: GRID_HEIGHT - 35}, {x: Math.floor(GRID_WIDTH/2), y: GRID_HEIGHT - 35}
+            ];
+            let spotIdx = 0;
+            for (let b of decor) {
+                if (spotIdx >= decorSpots.length) {
+                    // Place remaining decor in available spots
+                    const x = 2 + (spotIdx % 8) * 4;
+                    const y = 5 + Math.floor(spotIdx / 8) * 3;
+                    const def = BUILDINGS[b.type];
+                    if (def && isValidPosition(x, y, def.width, def.height)) {
+                        buildings.push({ type: b.type, gx: x, gy: y });
+                    }
+                } else {
+                    const spot = decorSpots[spotIdx];
+                    const def = BUILDINGS[b.type];
+                    if (def && isValidPosition(spot.x, spot.y, def.width, def.height)) {
+                        buildings.push({ type: b.type, gx: spot.x, gy: spot.y });
+                    }
+                }
+                spotIdx++;
+            }
+
+            // Place any remaining slopes/lifts
+            let overflowX = 2;
+            let overflowY = 5;
+            for (let b of [...otherLifts, ...otherSlopes]) {
+                const def = BUILDINGS[b.type];
+                if (def && isValidPosition(overflowX, overflowY, def.width, def.height)) {
+                    buildings.push({ type: b.type, gx: overflowX, gy: overflowY });
+                    overflowX += def.width + 1;
+                    if (overflowX > GRID_WIDTH - 5) { overflowX = 2; overflowY += 4; }
+                }
             }
         }
 
