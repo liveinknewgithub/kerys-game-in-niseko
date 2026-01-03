@@ -363,7 +363,7 @@
 
             <div class="action-buttons">
                 <button class="action-btn save" onclick="saveGame()">Save</button>
-                <button class="action-btn delete" onclick="toggleDeleteMode()">Delete</button>
+                <button class="action-btn delete" onclick="toggleDeleteMode()">Reset All</button>
             </div>
             <div class="action-buttons">
                 <button class="action-btn" style="background: #805ad5; color: white;" onclick="newGame()">Reorganize</button>
@@ -3894,12 +3894,32 @@
             };
         });
 
-        // Toggle delete mode
+        // Delete everything and start fresh
         function toggleDeleteMode() {
-            deleteMode = !deleteMode;
-            selectedBuilding = null;
-            document.querySelector('.action-btn.delete').style.background = deleteMode ? '#c53030' : '#fc8181';
-            renderBuildMenu();
+            if (confirm('Delete EVERYTHING and start fresh? You will get 10,000 coins and 25 gems!')) {
+                localStorage.removeItem('skiResortSave');
+
+                // Reset all state
+                landTier = 2; // 80x100 grid
+                GRID_WIDTH = LAND_TIERS[landTier].width;
+                GRID_HEIGHT = LAND_TIERS[landTier].height;
+                gemUpgrades = { luckyCharm: false, gemFinder: false, goldenTouch: false };
+                milestonesReached = {
+                    buildings5: false, buildings10: false, buildings20: false, buildings50: false,
+                    stars3: false, stars4: false, stars5: false
+                };
+                dayNumber = 1;
+                gameTime = 0;
+                guests = [];
+                deleteMode = false;
+                selectedBuilding = null;
+
+                createStarterResort();
+                updateUI();
+                renderBuildMenu();
+                saveGame();
+                showNotification('Fresh start! Enjoy your new resort!');
+            }
         }
 
         // Save game
