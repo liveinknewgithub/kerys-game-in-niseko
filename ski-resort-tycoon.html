@@ -3931,11 +3931,15 @@
 
         // Reorganize existing buildings into a realistic ski resort layout
         function reorganizeResort() {
+            // Save all original buildings
+            const originalBuildings = [...buildings];
+            const originalCount = originalBuildings.length;
+
             // Group buildings by type/category
-            const lifts = buildings.filter(b => BUILDINGS[b.type]?.category === 'lifts');
-            const slopes = buildings.filter(b => BUILDINGS[b.type]?.category === 'slopes');
-            const foodAndBuildings = buildings.filter(b => BUILDINGS[b.type]?.category === 'buildings');
-            const decor = buildings.filter(b => BUILDINGS[b.type]?.category === 'decor');
+            const lifts = originalBuildings.filter(b => BUILDINGS[b.type]?.category === 'lifts');
+            const slopes = originalBuildings.filter(b => BUILDINGS[b.type]?.category === 'slopes');
+            const foodAndBuildings = originalBuildings.filter(b => BUILDINGS[b.type]?.category === 'buildings');
+            const decor = originalBuildings.filter(b => BUILDINGS[b.type]?.category === 'decor');
 
             // Separate slopes by difficulty
             const easySlopes = slopes.filter(b => ['greenSlope'].includes(b.type));
@@ -3949,129 +3953,71 @@
             const advancedLifts = lifts.filter(b => ['gondola', 'cableCar', 'funicular', 'helicopter'].includes(b.type));
             const otherLifts = lifts.filter(b => !beginnerLifts.includes(b) && !mainLifts.includes(b) && !advancedLifts.includes(b));
 
-            // Clear and rebuild with organized layout
+            // Clear buildings array
             buildings = [];
 
-            // === BASE AREA (bottom, y: 35-45) - Lodge, food, services ===
-            let baseX = 12;
-            let baseY = GRID_HEIGHT - 8;
-            for (let b of foodAndBuildings) {
-                const def = BUILDINGS[b.type];
-                if (def && isValidPosition(baseX, baseY, def.width, def.height)) {
-                    buildings.push({ type: b.type, gx: baseX, gy: baseY });
-                    baseX += def.width + 1;
-                    if (baseX > GRID_WIDTH - 5) { baseX = 12; baseY += 3; }
+            // Helper to find valid position
+            function placeBuilding(type, startX, startY, maxX, maxY) {
+                const def = BUILDINGS[type];
+                if (!def) return false;
+                for (let y = startY; y <= maxY; y += 2) {
+                    for (let x = startX; x <= maxX; x += 2) {
+                        if (isValidPosition(x, y, def.width, def.height)) {
+                            buildings.push({ type: type, gx: x, gy: y });
+                            return true;
+                        }
+                    }
                 }
+                return false;
             }
 
-            // === BEGINNER AREA (left side) ===
-            let beginnerX = 3;
-            let beginnerY = GRID_HEIGHT - 18;
-            // Place beginner lifts
-            for (let b of beginnerLifts) {
-                const def = BUILDINGS[b.type];
-                if (def && isValidPosition(beginnerX, beginnerY, def.width, def.height)) {
-                    buildings.push({ type: b.type, gx: beginnerX, gy: beginnerY });
-                    beginnerX += def.width + 2;
-                }
+            // === BASE AREA (bottom) - Lodge, food, services ===
+            for (let b of foodAndBuildings) {
+                placeBuilding(b.type, 10, GRID_HEIGHT - 15, GRID_WIDTH - 5, GRID_HEIGHT - 3);
             }
-            // Place easy slopes nearby
-            beginnerX = 2;
-            beginnerY = GRID_HEIGHT - 22;
+
+            // === BEGINNER AREA (left side, lower) ===
+            for (let b of beginnerLifts) {
+                placeBuilding(b.type, 2, GRID_HEIGHT - 35, 15, GRID_HEIGHT - 18);
+            }
             for (let b of easySlopes) {
-                const def = BUILDINGS[b.type];
-                if (def && isValidPosition(beginnerX, beginnerY, def.width, def.height)) {
-                    buildings.push({ type: b.type, gx: beginnerX, gy: beginnerY });
-                    beginnerX += def.width + 1;
-                    if (beginnerX > 12) { beginnerX = 2; beginnerY -= 4; }
-                }
+                placeBuilding(b.type, 2, GRID_HEIGHT - 45, 18, GRID_HEIGHT - 25);
             }
 
             // === INTERMEDIATE AREA (center) ===
-            let midX = Math.floor(GRID_WIDTH / 2) - 5;
-            let midY = GRID_HEIGHT - 20;
-            // Place main lifts
             for (let b of mainLifts) {
-                const def = BUILDINGS[b.type];
-                if (def && isValidPosition(midX, midY, def.width, def.height)) {
-                    buildings.push({ type: b.type, gx: midX, gy: midY });
-                    midX += def.width + 3;
-                }
+                placeBuilding(b.type, 20, GRID_HEIGHT - 40, 45, GRID_HEIGHT - 20);
             }
-            // Place medium slopes
-            midX = Math.floor(GRID_WIDTH / 2) - 6;
-            midY = GRID_HEIGHT - 28;
             for (let b of mediumSlopes) {
-                const def = BUILDINGS[b.type];
-                if (def && isValidPosition(midX, midY, def.width, def.height)) {
-                    buildings.push({ type: b.type, gx: midX, gy: midY });
-                    midX += def.width + 1;
-                    if (midX > GRID_WIDTH / 2 + 8) { midX = Math.floor(GRID_WIDTH / 2) - 6; midY -= 5; }
-                }
+                placeBuilding(b.type, 18, GRID_HEIGHT - 55, 50, GRID_HEIGHT - 30);
             }
 
-            // === EXPERT AREA (right/top) ===
-            let expertX = GRID_WIDTH - 15;
-            let expertY = GRID_HEIGHT - 30;
-            // Place advanced lifts
+            // === EXPERT AREA (right/top) - with terrain parks ===
             for (let b of advancedLifts) {
-                const def = BUILDINGS[b.type];
-                if (def && isValidPosition(expertX, expertY, def.width, def.height)) {
-                    buildings.push({ type: b.type, gx: expertX, gy: expertY });
-                    expertX += def.width + 2;
-                }
+                placeBuilding(b.type, 50, GRID_HEIGHT - 50, GRID_WIDTH - 5, GRID_HEIGHT - 25);
             }
-            // Place hard slopes and terrain parks
-            expertX = GRID_WIDTH - 18;
-            expertY = GRID_HEIGHT - 38;
             for (let b of hardSlopes) {
-                const def = BUILDINGS[b.type];
-                if (def && isValidPosition(expertX, expertY, def.width, def.height)) {
-                    buildings.push({ type: b.type, gx: expertX, gy: expertY });
-                    expertX += def.width + 1;
-                    if (expertX > GRID_WIDTH - 3) { expertX = GRID_WIDTH - 18; expertY -= 5; }
-                }
+                placeBuilding(b.type, 45, GRID_HEIGHT - 70, GRID_WIDTH - 3, GRID_HEIGHT - 35);
             }
 
-            // === DECORATIONS (scattered around) ===
-            const decorSpots = [
-                {x: 2, y: GRID_HEIGHT - 10}, {x: 10, y: GRID_HEIGHT - 12},
-                {x: GRID_WIDTH - 8, y: GRID_HEIGHT - 10}, {x: GRID_WIDTH - 5, y: GRID_HEIGHT - 15},
-                {x: 5, y: GRID_HEIGHT - 25}, {x: 12, y: GRID_HEIGHT - 28},
-                {x: GRID_WIDTH - 10, y: GRID_HEIGHT - 25}, {x: GRID_WIDTH - 6, y: GRID_HEIGHT - 35},
-                {x: 8, y: GRID_HEIGHT - 35}, {x: Math.floor(GRID_WIDTH/2), y: GRID_HEIGHT - 35}
-            ];
-            let spotIdx = 0;
-            for (let b of decor) {
-                if (spotIdx >= decorSpots.length) {
-                    // Place remaining decor in available spots
-                    const x = 2 + (spotIdx % 8) * 4;
-                    const y = 5 + Math.floor(spotIdx / 8) * 3;
-                    const def = BUILDINGS[b.type];
-                    if (def && isValidPosition(x, y, def.width, def.height)) {
-                        buildings.push({ type: b.type, gx: x, gy: y });
-                    }
-                } else {
-                    const spot = decorSpots[spotIdx];
-                    const def = BUILDINGS[b.type];
-                    if (def && isValidPosition(spot.x, spot.y, def.width, def.height)) {
-                        buildings.push({ type: b.type, gx: spot.x, gy: spot.y });
-                    }
-                }
-                spotIdx++;
-            }
-
-            // Place any remaining slopes/lifts
-            let overflowX = 2;
-            let overflowY = 5;
+            // === OTHER SLOPES/LIFTS ===
             for (let b of [...otherLifts, ...otherSlopes]) {
-                const def = BUILDINGS[b.type];
-                if (def && isValidPosition(overflowX, overflowY, def.width, def.height)) {
-                    buildings.push({ type: b.type, gx: overflowX, gy: overflowY });
-                    overflowX += def.width + 1;
-                    if (overflowX > GRID_WIDTH - 5) { overflowX = 2; overflowY += 4; }
+                placeBuilding(b.type, 2, 5, GRID_WIDTH - 5, GRID_HEIGHT - 50);
+            }
+
+            // === DECORATIONS (scattered) ===
+            for (let b of decor) {
+                // Try several areas for decorations
+                if (!placeBuilding(b.type, 2, GRID_HEIGHT - 20, 10, GRID_HEIGHT - 5) &&
+                    !placeBuilding(b.type, GRID_WIDTH - 15, GRID_HEIGHT - 20, GRID_WIDTH - 2, GRID_HEIGHT - 5) &&
+                    !placeBuilding(b.type, 15, GRID_HEIGHT - 50, 40, GRID_HEIGHT - 35) &&
+                    !placeBuilding(b.type, 2, 2, GRID_WIDTH - 2, GRID_HEIGHT - 50)) {
+                    // Force place if nothing else works
+                    placeBuilding(b.type, 2, 2, GRID_WIDTH - 2, GRID_HEIGHT - 2);
                 }
             }
+
+            console.log(`Reorganized: ${originalCount} buildings -> ${buildings.length} placed`);
         }
 
         // Load game
@@ -4084,7 +4030,13 @@
                 buildings = data.buildings || [];
                 dayNumber = data.dayNumber || 1;
                 gameTime = data.gameTime || 0;
-                landTier = data.landTier || 0;
+
+                // Old saves don't have landTier - give them the original 80x100 grid (tier 2)
+                if (data.landTier === undefined) {
+                    landTier = 2; // Original grid size
+                } else {
+                    landTier = data.landTier;
+                }
 
                 // Load upgrades
                 if (data.gemUpgrades) {
