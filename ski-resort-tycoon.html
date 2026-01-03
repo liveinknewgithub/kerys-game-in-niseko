@@ -814,8 +814,48 @@
         function getTerrainHeight(gx, gy) {
             const centerX = GRID_WIDTH / 2;
             const distFromCenter = Math.abs(gx - centerX);
-            const heightFromTop = gy;
-            return Math.max(0, (GRID_HEIGHT - heightFromTop) * 3 - distFromCenter * 2);
+
+            // Base slope - higher at top, lower at bottom
+            let baseHeight = (GRID_HEIGHT - gy) * 2;
+
+            // Mountain peaks at the top of the map
+            const peakZone = GRID_HEIGHT * 0.3; // Top 30% has peaks
+            if (gy < peakZone) {
+                // Create 3 mountain peaks
+                const peak1X = GRID_WIDTH * 0.2;
+                const peak2X = GRID_WIDTH * 0.5;
+                const peak3X = GRID_WIDTH * 0.8;
+
+                const dist1 = Math.sqrt(Math.pow(gx - peak1X, 2) + Math.pow(gy * 2, 2));
+                const dist2 = Math.sqrt(Math.pow(gx - peak2X, 2) + Math.pow(gy * 2, 2));
+                const dist3 = Math.sqrt(Math.pow(gx - peak3X, 2) + Math.pow(gy * 2, 2));
+
+                const peakRadius = GRID_WIDTH * 0.25;
+                const peak1Height = Math.max(0, (1 - dist1 / peakRadius)) * 150;
+                const peak2Height = Math.max(0, (1 - dist2 / peakRadius)) * 200; // Center peak is tallest
+                const peak3Height = Math.max(0, (1 - dist3 / peakRadius)) * 130;
+
+                baseHeight += Math.max(peak1Height, peak2Height, peak3Height);
+            }
+
+            // Valley in the middle-bottom (for base lodge area)
+            const valleyZone = gy > GRID_HEIGHT * 0.7;
+            if (valleyZone) {
+                const valleyDepth = (gy - GRID_HEIGHT * 0.7) / (GRID_HEIGHT * 0.3);
+                baseHeight *= (1 - valleyDepth * 0.5);
+            }
+
+            return Math.max(0, baseHeight - distFromCenter * 0.5);
+        }
+
+        // Check if a position is in the mountain zone (for special building rules)
+        function isMountainZone(gx, gy) {
+            return gy < GRID_HEIGHT * 0.3;
+        }
+
+        // Check if a position is in the valley/base zone
+        function isValleyZone(gx, gy) {
+            return gy > GRID_HEIGHT * 0.7;
         }
 
         // Draw isometric tile
@@ -907,14 +947,44 @@
             ctx.closePath();
             ctx.fill();
 
-            // Draw grid tiles
+            // Draw grid tiles with elevation-based coloring
             for (let gy = 0; gy < GRID_HEIGHT; gy++) {
                 for (let gx = 0; gx < GRID_WIDTH; gx++) {
-                    // Vary snow color slightly
-                    const variation = Math.sin(gx * 0.5 + gy * 0.3) * 10;
-                    const baseColor = 230 + variation;
-                    const snowColor = `rgb(${baseColor}, ${baseColor + 5}, ${baseColor + 10})`;
+                    const elevation = getTerrainHeight(gx, gy);
+                    const variation = Math.sin(gx * 0.5 + gy * 0.3) * 5;
+
+                    let snowColor;
+                    if (elevation > 250) {
+                        // Peak zone - bright white/icy blue with rocky patches
+                        const icy = 245 + variation;
+                        snowColor = `rgb(${icy - 10}, ${icy - 5}, ${icy + 5})`;
+                    } else if (elevation > 150) {
+                        // High slopes - crisp white snow
+                        const crisp = 240 + variation;
+                        snowColor = `rgb(${crisp}, ${crisp + 3}, ${crisp + 8})`;
+                    } else if (elevation > 80) {
+                        // Mid slopes - normal snow
+                        const mid = 230 + variation;
+                        snowColor = `rgb(${mid}, ${mid + 5}, ${mid + 10})`;
+                    } else {
+                        // Valley/base - slightly warmer snow, hint of packed trails
+                        const base = 220 + variation;
+                        snowColor = `rgb(${base + 5}, ${base + 8}, ${base + 12})`;
+                    }
+
                     drawTile(gx, gy, snowColor);
+
+                    // Add rocky patches at very high elevations
+                    if (elevation > 280 && Math.random() < 0.15) {
+                        const pos = gridToScreen(gx, gy);
+                        ctx.save();
+                        ctx.translate(pos.x, pos.y - elevation);
+                        ctx.fillStyle = '#8B8B8B';
+                        ctx.beginPath();
+                        ctx.arc(0, TILE_HEIGHT * 0.5, 4 + Math.random() * 4, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.restore();
+                    }
                 }
             }
         }
