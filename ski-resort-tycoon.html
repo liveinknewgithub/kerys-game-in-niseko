@@ -4102,71 +4102,11 @@
             }
         }
 
-        // Create a nice starter resort layout - GENEROUS to make up for lost saves!
+        // Blank canvas - just coins and gems, build your own resort!
         function createStarterResort() {
             buildings = [];
-            coins = 10000; // Generous starting coins!
-            gems = 25;     // Plenty of gems to get started!
-
-            // === BASE VILLAGE (bottom) ===
-            buildings.push({ type: 'lodge', gx: 35, gy: 90 });
-            buildings.push({ type: 'restaurant', gx: 40, gy: 90 });
-            buildings.push({ type: 'hotel', gx: 30, gy: 88 });
-            buildings.push({ type: 'rentalShop', gx: 45, gy: 92 });
-            buildings.push({ type: 'ticketBooth', gx: 28, gy: 92 });
-            buildings.push({ type: 'hotChocolate', gx: 48, gy: 90 });
-            buildings.push({ type: 'bakery', gx: 50, gy: 88 });
-            buildings.push({ type: 'giftShop', gx: 25, gy: 90 });
-            buildings.push({ type: 'firstAid', gx: 52, gy: 92 });
-            buildings.push({ type: 'skiSchool', gx: 22, gy: 88 });
-
-            // Base area decorations
-            buildings.push({ type: 'bench', gx: 33, gy: 94 });
-            buildings.push({ type: 'bench', gx: 43, gy: 94 });
-            buildings.push({ type: 'lamp', gx: 30, gy: 95 });
-            buildings.push({ type: 'lamp', gx: 46, gy: 95 });
-            buildings.push({ type: 'flag', gx: 38, gy: 86 });
-            buildings.push({ type: 'flag', gx: 40, gy: 86 });
-            buildings.push({ type: 'firePit', gx: 36, gy: 95 });
-
-            // === BEGINNER AREA (left side) ===
-            buildings.push({ type: 'magicCarpet', gx: 10, gy: 75 });
-            buildings.push({ type: 'ropeTow', gx: 6, gy: 70 });
-            buildings.push({ type: 'greenSlope', gx: 8, gy: 65 });
-            buildings.push({ type: 'greenSlope', gx: 12, gy: 60 });
-            buildings.push({ type: 'greenSlope', gx: 6, gy: 55 });
-            buildings.push({ type: 'tubingHill', gx: 14, gy: 68 });
-            buildings.push({ type: 'pineTree', gx: 4, gy: 72 });
-            buildings.push({ type: 'pineTree', gx: 16, gy: 62 });
-            buildings.push({ type: 'snowman', gx: 10, gy: 80 });
-
-            // === INTERMEDIATE AREA (center) ===
-            buildings.push({ type: 'chairlift', gx: 35, gy: 65 });
-            buildings.push({ type: 'chairlift', gx: 42, gy: 60 });
-            buildings.push({ type: 'tbar', gx: 30, gy: 70 });
-            buildings.push({ type: 'blueSlope', gx: 32, gy: 50 });
-            buildings.push({ type: 'blueSlope', gx: 38, gy: 45 });
-            buildings.push({ type: 'blueSlope', gx: 44, gy: 52 });
-            buildings.push({ type: 'crossCountry', gx: 25, gy: 55 });
-            buildings.push({ type: 'iceRink', gx: 48, gy: 75 });
-            buildings.push({ type: 'pineTree', gx: 28, gy: 58 });
-            buildings.push({ type: 'pineTree', gx: 50, gy: 48 });
-
-            // === EXPERT AREA (right/top) ===
-            buildings.push({ type: 'quadChair', gx: 60, gy: 50 });
-            buildings.push({ type: 'blackSlope', gx: 62, gy: 35 });
-            buildings.push({ type: 'blackSlope', gx: 58, gy: 28 });
-            buildings.push({ type: 'moguls', gx: 65, gy: 42 });
-            buildings.push({ type: 'terrainPark', gx: 55, gy: 22 });
-            buildings.push({ type: 'halfpipe', gx: 62, gy: 18 });
-
-            // === AMENITIES scattered around ===
-            buildings.push({ type: 'cabin', gx: 18, gy: 82 });
-            buildings.push({ type: 'spa', gx: 55, gy: 80 });
-            buildings.push({ type: 'hotTub', gx: 60, gy: 85 });
-            buildings.push({ type: 'igloo', gx: 20, gy: 50 });
-            buildings.push({ type: 'snowman', gx: 45, gy: 78 });
-            buildings.push({ type: 'snowman', gx: 65, gy: 55 });
+            coins = 10000;
+            gems = 25;
         }
 
         // Mouse position tracking
