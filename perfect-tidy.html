@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfect Tidy - Satisfying Organization Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Title Screen */
+        #title-screen {
+            text-align: center;
+            color: white;
+        }
+
+        #title-screen h1 {
+            font-size: 4rem;
+            text-shadow: 4px 4px 8px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        #title-screen p {
+            font-size: 1.5rem;
+            margin-bottom: 40px;
+            opacity: 0.9;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+            color: white;
+            border: none;
+            padding: 20px 60px;
+            font-size: 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* Level Select */
+        #level-select {
+            display: none;
+            text-align: center;
+            color: white;
+        }
+
+        #level-select h2 {
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+        }
+
+        .level-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            max-width: 600px;
+        }
+
+        .level-btn {
+            width: 100px;
+            height: 100px;
+            background: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 2rem;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .level-btn:hover:not(:disabled) {
+            transform: scale(1.1);
+        }
+
+        .level-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .level-btn .stars {
+            font-size: 0.8rem;
+            color: #ffd700;
+        }
+
+        .level-btn .icon {
+            font-size: 2.5rem;
+        }
+
+        /* Game Screen */
+        #game-screen {
+            display: none;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+        }
+
+        #game-header {
+            background: rgba(255,255,255,0.95);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        #game-header h3 {
+            font-size: 1.5rem;
+            color: #333;
+        }
+
+        #progress-bar {
+            width: 200px;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        #progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        #timer {
+            font-size: 1.3rem;
+            color: #666;
+        }
+
+        .header-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        #game-area {
+            flex: 1;
+            display: flex;
+            padding: 20px;
+            gap: 20px;
+            background: linear-gradient(180deg, #f5f7fa 0%, #e4e8eb 100%);
+        }
+
+        /* Items area (left side) */
+        #items-area {
+            flex: 1;
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            gap: 15px;
+            overflow-y: auto;
+        }
+
+        .item {
+            width: 80px;
+            height: 80px;
+            background: #f0f0f0;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            cursor: grab;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .item.dragging {
+            cursor: grabbing;
+            transform: scale(1.1);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+            z-index: 1000;
+            position: fixed;
+            pointer-events: none;
+        }
+
+        .item.placed {
+            display: none;
+        }
+
+        /* Target area (right side) */
+        #target-area {
+            flex: 1.5;
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .target-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        /* Closet specific styles */
+        .closet-bg {
+            background: linear-gradient(180deg, #8B4513 0%, #A0522D 100%);
+            border-radius: 15px;
+            padding: 15px;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        /* Fridge specific styles */
+        .fridge-bg {
+            background: linear-gradient(180deg, #e8e8e8 0%, #d0d0d0 100%);
+            border: 8px solid #888;
+            border-radius: 15px;
+            padding: 15px;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        /* Desk specific styles */
+        .desk-bg {
+            background: linear-gradient(180deg, #DEB887 0%, #D2B48C 100%);
+            border-radius: 15px;
+            padding: 15px;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        /* Bookshelf specific styles */
+        .bookshelf-bg {
+            background: linear-gradient(180deg, #5D4037 0%, #4E342E 100%);
+            border-radius: 15px;
+            padding: 15px;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .slot {
+            background: rgba(255,255,255,0.3);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            border: 3px dashed rgba(255,255,255,0.5);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .slot.highlight {
+            background: rgba(76, 175, 80, 0.4);
+            border-color: #4CAF50;
+            transform: scale(1.05);
+        }
+
+        .slot.wrong {
+            background: rgba(244, 67, 54, 0.4);
+            border-color: #f44336;
+            animation: shake 0.3s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .slot.filled {
+            background: rgba(255,255,255,0.8);
+            border: 3px solid rgba(76, 175, 80, 0.8);
+        }
+
+        .slot .hint {
+            opacity: 0.3;
+            font-size: 2rem;
+        }
+
+        /* Sparkle effect */
+        .sparkle {
+            position: absolute;
+            pointer-events: none;
+            animation: sparkle 0.6s ease-out forwards;
+        }
+
+        @keyframes sparkle {
+            0% { transform: scale(0) rotate(0deg); opacity: 1; }
+            100% { transform: scale(1.5) rotate(180deg); opacity: 0; }
+        }
+
+        /* Complete screen */
+        #complete-screen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 2000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        #complete-screen h2 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            animation: bounce 1s ease-in-out infinite;
+        }
+
+        #complete-screen .stars-display {
+            font-size: 4rem;
+            margin-bottom: 30px;
+        }
+
+        #complete-screen .stats {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+        }
+
+        .complete-buttons {
+            display: flex;
+            gap: 20px;
+        }
+
+        /* Sound toggle */
+        #sound-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.9);
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        /* Back button */
+        #back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.9);
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: none;
+        }
+
+        /* Hint button */
+        #hint-btn {
+            background: #FFD700;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- Title Screen -->
+        <div id="title-screen">
+            <h1>✨ Perfect Tidy ✨</h1>
+            <p>Organize everything perfectly!</p>
+            <button class="btn" onclick="showLevelSelect()">Play Now</button>
+        </div>
+
+        <!-- Level Select -->
+        <div id="level-select">
+            <h2>Select Level</h2>
+            <div class="level-grid" id="level-grid">
+                <!-- Levels will be generated here -->
+            </div>
+            <br><br>
+            <button class="btn" onclick="showTitleScreen()">Back</button>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen">
+            <div id="game-header">
+                <h3 id="level-title">Level 1</h3>
+                <div id="progress-bar">
+                    <div id="progress-fill"></div>
+                </div>
+                <div id="timer">⏱️ 0:00</div>
+                <button class="header-btn" id="hint-btn" onclick="showHint()">💡 Hint</button>
+            </div>
+            <div id="game-area">
+                <div id="items-area">
+                    <!-- Draggable items will be here -->
+                </div>
+                <div id="target-area">
+                    <!-- Target slots will be here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Complete Screen -->
+        <div id="complete-screen">
+            <h2>🎉 Perfect! 🎉</h2>
+            <div class="stars-display" id="stars-earned">⭐⭐⭐</div>
+            <div class="stats" id="complete-stats">
+                Time: 0:30<br>
+                Moves: 12
+            </div>
+            <div class="complete-buttons">
+                <button class="btn" onclick="restartLevel()">🔄 Retry</button>
+                <button class="btn" onclick="nextLevel()">▶️ Next</button>
+                <button class="btn" onclick="showLevelSelect()">📋 Levels</button>
+            </div>
+        </div>
+    </div>
+
+    <button id="sound-toggle" onclick="toggleSound()">🔊</button>
+    <button id="back-btn" onclick="showLevelSelect()">←</button>
+
+    <script>
+        // Game State
+        let currentLevel = 0;
+        let placedItems = 0;
+        let totalItems = 0;
+        let moves = 0;
+        let startTime = 0;
+        let timerInterval = null;
+        let soundEnabled = true;
+        let levelProgress = JSON.parse(localStorage.getItem('perfectTidyProgress') || '{}');
+
+        // Audio Context
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled || !audioCtx) return;
+
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            switch(type) {
+                case 'pickup':
+                    oscillator.frequency.setValueAtTime(400, audioCtx.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                    oscillator.start(audioCtx.currentTime);
+                    oscillator.stop(audioCtx.currentTime + 0.1);
+                    break;
+                case 'place':
+                    oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                    oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                    oscillator.start(audioCtx.currentTime);
+                    oscillator.stop(audioCtx.currentTime + 0.3);
+                    break;
+                case 'wrong':
+                    oscillator.frequency.setValueAtTime(200, audioCtx.currentTime);
+                    oscillator.frequency.setValueAtTime(150, audioCtx.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                    oscillator.start(audioCtx.currentTime);
+                    oscillator.stop(audioCtx.currentTime + 0.2);
+                    break;
+                case 'complete':
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((freq, i) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.15);
+                        gain.gain.setValueAtTime(0.3, audioCtx.currentTime + i * 0.15);
+                        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.15 + 0.3);
+                        osc.start(audioCtx.currentTime + i * 0.15);
+                        osc.stop(audioCtx.currentTime + i * 0.15 + 0.3);
+                    });
+                    break;
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('sound-toggle').textContent = soundEnabled ? '🔊' : '🔇';
+        }
+
+        // Level Definitions
+        const LEVELS = [
+            {
+                id: 1,
+                name: "Tidy Closet",
+                icon: "👕",
+                type: "closet",
+                items: [
+                    { emoji: "👕", slot: 0 },
+                    { emoji: "👖", slot: 1 },
+                    { emoji: "👗", slot: 2 },
+                    { emoji: "🧥", slot: 3 },
+                    { emoji: "👔", slot: 4 },
+                    { emoji: "🧣", slot: 5 },
+                    { emoji: "🧤", slot: 6 },
+                    { emoji: "🧢", slot: 7 },
+                    { emoji: "👟", slot: 8 },
+                    { emoji: "👠", slot: 9 },
+                    { emoji: "👜", slot: 10 },
+                    { emoji: "🎒", slot: 11 }
+                ]
+            },
+            {
+                id: 2,
+                name: "Organize Fridge",
+                icon: "🧊",
+                type: "fridge",
+                items: [
+                    { emoji: "🥛", slot: 0 },
+                    { emoji: "🧀", slot: 1 },
+                    { emoji: "🥚", slot: 2 },
+                    { emoji: "🍎", slot: 3 },
+                    { emoji: "🥕", slot: 4 },
+                    { emoji: "🥬", slot: 5 },
+                    { emoji: "🍗", slot: 6 },
+                    { emoji: "🥩", slot: 7 },
+                    { emoji: "🐟", slot: 8 },
+                    { emoji: "🧃", slot: 9 },
+                    { emoji: "🍰", slot: 10 },
+                    { emoji: "🍦", slot: 11 }
+                ]
+            },
+            {
+                id: 3,
+                name: "Clean Desk",
+                icon: "🖥️",
+                type: "desk",
+                items: [
+                    { emoji: "💻", slot: 0 },
+                    { emoji: "🖱️", slot: 1 },
+                    { emoji: "⌨️", slot: 2 },
+                    { emoji: "📱", slot: 3 },
+                    { emoji: "📚", slot: 4 },
+                    { emoji: "✏️", slot: 5 },
+                    { emoji: "📎", slot: 6 },
+                    { emoji: "🖊️", slot: 7 },
+                    { emoji: "📒", slot: 8 },
+                    { emoji: "🗂️", slot: 9 },
+                    { emoji: "☕", slot: 10 },
+                    { emoji: "🪴", slot: 11 }
+                ]
+            },
+            {
+                id: 4,
+                name: "Bookshelf",
+                icon: "📚",
+                type: "bookshelf",
+                items: [
+                    { emoji: "📕", slot: 0 },
+                    { emoji: "📗", slot: 1 },
+                    { emoji: "📘", slot: 2 },
+                    { emoji: "📙", slot: 3 },
+                    { emoji: "📓", slot: 4 },
+                    { emoji: "📔", slot: 5 },
+                    { emoji: "📖", slot: 6 },
+                    { emoji: "🏆", slot: 7 },
+                    { emoji: "🖼️", slot: 8 },
+                    { emoji: "🕯️", slot: 9 },
+                    { emoji: "🪴", slot: 10 },
+                    { emoji: "⏰", slot: 11 },
+                    { emoji: "🎵", slot: 12 },
+                    { emoji: "📷", slot: 13 },
+                    { emoji: "🧸", slot: 14 }
+                ]
+            },
+            {
+                id: 5,
+                name: "Kitchen Counter",
+                icon: "🍳",
+                type: "desk",
+                items: [
+                    { emoji: "🍳", slot: 0 },
+                    { emoji: "🥘", slot: 1 },
+                    { emoji: "🍲", slot: 2 },
+                    { emoji: "🔪", slot: 3 },
+                    { emoji: "🥄", slot: 4 },
+                    { emoji: "🍴", slot: 5 },
+                    { emoji: "🧂", slot: 6 },
+                    { emoji: "🫒", slot: 7 },
+                    { emoji: "🧈", slot: 8 },
+                    { emoji: "🌶️", slot: 9 },
+                    { emoji: "🧅", slot: 10 },
+                    { emoji: "🍋", slot: 11 }
+                ]
+            },
+            {
+                id: 6,
+                name: "Toy Box",
+                icon: "🧸",
+                type: "closet",
+                items: [
+                    { emoji: "🧸", slot: 0 },
+                    { emoji: "🎮", slot: 1 },
+                    { emoji: "🎲", slot: 2 },
+                    { emoji: "🧩", slot: 3 },
+                    { emoji: "🪀", slot: 4 },
+                    { emoji: "🎨", slot: 5 },
+                    { emoji: "🪁", slot: 6 },
+                    { emoji: "⚽", slot: 7 },
+                    { emoji: "🏀", slot: 8 },
+                    { emoji: "🎸", slot: 9 },
+                    { emoji: "🚗", slot: 10 },
+                    { emoji: "✈️", slot: 11 }
+                ]
+            },
+            {
+                id: 7,
+                name: "Makeup Table",
+                icon: "💄",
+                type: "desk",
+                items: [
+                    { emoji: "💄", slot: 0 },
+                    { emoji: "💅", slot: 1 },
+                    { emoji: "🪞", slot: 2 },
+                    { emoji: "💍", slot: 3 },
+                    { emoji: "👑", slot: 4 },
+                    { emoji: "🎀", slot: 5 },
+                    { emoji: "🌸", slot: 6 },
+                    { emoji: "🧴", slot: 7 },
+                    { emoji: "🪥", slot: 8 },
+                    { emoji: "🧼", slot: 9 },
+                    { emoji: "🛁", slot: 10 },
+                    { emoji: "🌺", slot: 11 }
+                ]
+            },
+            {
+                id: 8,
+                name: "Garden Shed",
+                icon: "🌻",
+                type: "closet",
+                items: [
+                    { emoji: "🌻", slot: 0 },
+                    { emoji: "🌷", slot: 1 },
+                    { emoji: "🌹", slot: 2 },
+                    { emoji: "🪴", slot: 3 },
+                    { emoji: "🌵", slot: 4 },
+                    { emoji: "🪻", slot: 5 },
+                    { emoji: "🧤", slot: 6 },
+                    { emoji: "🪣", slot: 7 },
+                    { emoji: "🚿", slot: 8 },
+                    { emoji: "🪨", slot: 9 },
+                    { emoji: "🌱", slot: 10 },
+                    { emoji: "🍂", slot: 11 }
+                ]
+            }
+        ];
+
+        // Navigation
+        function showTitleScreen() {
+            document.getElementById('title-screen').style.display = 'block';
+            document.getElementById('level-select').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'none';
+            document.getElementById('complete-screen').style.display = 'none';
+            document.getElementById('back-btn').style.display = 'none';
+            stopTimer();
+        }
+
+        function showLevelSelect() {
+            document.getElementById('title-screen').style.display = 'none';
+            document.getElementById('level-select').style.display = 'block';
+            document.getElementById('game-screen').style.display = 'none';
+            document.getElementById('complete-screen').style.display = 'none';
+            document.getElementById('back-btn').style.display = 'none';
+            generateLevelGrid();
+            stopTimer();
+        }
+
+        function generateLevelGrid() {
+            const grid = document.getElementById('level-grid');
+            grid.innerHTML = '';
+
+            LEVELS.forEach((level, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'level-btn';
+
+                const stars = levelProgress[level.id] || 0;
+                const isUnlocked = index === 0 || levelProgress[LEVELS[index - 1].id] > 0;
+
+                btn.innerHTML = `
+                    <span class="icon">${level.icon}</span>
+                    <span class="stars">${'⭐'.repeat(stars)}${'☆'.repeat(3 - stars)}</span>
+                `;
+
+                btn.disabled = !isUnlocked;
+                btn.onclick = () => startLevel(index);
+
+                grid.appendChild(btn);
+            });
+        }
+
+        function startLevel(levelIndex) {
+            initAudio();
+            currentLevel = levelIndex;
+            const level = LEVELS[levelIndex];
+
+            document.getElementById('title-screen').style.display = 'none';
+            document.getElementById('level-select').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'flex';
+            document.getElementById('complete-screen').style.display = 'none';
+            document.getElementById('back-btn').style.display = 'block';
+
+            document.getElementById('level-title').textContent = `Level ${level.id}: ${level.name}`;
+
+            setupLevel(level);
+            startTimer();
+        }
+
+        function setupLevel(level) {
+            placedItems = 0;
+            totalItems = level.items.length;
+            moves = 0;
+            updateProgress();
+
+            // Setup items area
+            const itemsArea = document.getElementById('items-area');
+            itemsArea.innerHTML = '';
+
+            // Shuffle items
+            const shuffledItems = [...level.items].sort(() => Math.random() - 0.5);
+
+            shuffledItems.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'item';
+                div.textContent = item.emoji;
+                div.dataset.emoji = item.emoji;
+                div.dataset.targetSlot = item.slot;
+                div.id = `item-${index}`;
+
+                // Drag events
+                div.addEventListener('mousedown', startDrag);
+                div.addEventListener('touchstart', startDrag, { passive: false });
+
+                itemsArea.appendChild(div);
+            });
+
+            // Setup target area
+            const targetArea = document.getElementById('target-area');
+            targetArea.innerHTML = '';
+
+            const container = document.createElement('div');
+            container.className = `${level.type}-bg target-container`;
+
+            const slotCount = level.type === 'bookshelf' ? 15 : 12;
+
+            for (let i = 0; i < slotCount; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'slot';
+                slot.dataset.slotIndex = i;
+
+                // Find which item goes here and show hint
+                const itemForSlot = level.items.find(item => item.slot === i);
+                if (itemForSlot) {
+                    const hint = document.createElement('span');
+                    hint.className = 'hint';
+                    hint.textContent = itemForSlot.emoji;
+                    slot.appendChild(hint);
+                }
+
+                container.appendChild(slot);
+            }
+
+            targetArea.appendChild(container);
+        }
+
+        // Drag and Drop
+        let draggedItem = null;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+
+        function startDrag(e) {
+            e.preventDefault();
+
+            const item = e.target;
+            if (!item.classList.contains('item') || item.classList.contains('placed')) return;
+
+            draggedItem = item;
+
+            const rect = item.getBoundingClientRect();
+            const clientX = e.clientX || e.touches[0].clientX;
+            const clientY = e.clientY || e.touches[0].clientY;
+
+            dragOffsetX = clientX - rect.left;
+            dragOffsetY = clientY - rect.top;
+
+            item.classList.add('dragging');
+            item.style.left = (clientX - dragOffsetX) + 'px';
+            item.style.top = (clientY - dragOffsetY) + 'px';
+
+            playSound('pickup');
+
+            document.addEventListener('mousemove', onDrag);
+            document.addEventListener('mouseup', endDrag);
+            document.addEventListener('touchmove', onDrag, { passive: false });
+            document.addEventListener('touchend', endDrag);
+        }
+
+        function onDrag(e) {
+            if (!draggedItem) return;
+            e.preventDefault();
+
+            const clientX = e.clientX || e.touches[0].clientX;
+            const clientY = e.clientY || e.touches[0].clientY;
+
+            draggedItem.style.left = (clientX - dragOffsetX) + 'px';
+            draggedItem.style.top = (clientY - dragOffsetY) + 'px';
+
+            // Highlight valid slot
+            const slots = document.querySelectorAll('.slot');
+            slots.forEach(slot => {
+                slot.classList.remove('highlight');
+                const rect = slot.getBoundingClientRect();
+                if (clientX >= rect.left && clientX <= rect.right &&
+                    clientY >= rect.top && clientY <= rect.bottom) {
+                    if (!slot.classList.contains('filled')) {
+                        slot.classList.add('highlight');
+                    }
+                }
+            });
+        }
+
+        function endDrag(e) {
+            if (!draggedItem) return;
+
+            const clientX = e.clientX || (e.changedTouches && e.changedTouches[0].clientX);
+            const clientY = e.clientY || (e.changedTouches && e.changedTouches[0].clientY);
+
+            // Find slot under cursor
+            const slots = document.querySelectorAll('.slot');
+            let targetSlot = null;
+
+            slots.forEach(slot => {
+                slot.classList.remove('highlight');
+                const rect = slot.getBoundingClientRect();
+                if (clientX >= rect.left && clientX <= rect.right &&
+                    clientY >= rect.top && clientY <= rect.bottom) {
+                    targetSlot = slot;
+                }
+            });
+
+            moves++;
+
+            if (targetSlot && !targetSlot.classList.contains('filled')) {
+                const expectedSlot = parseInt(draggedItem.dataset.targetSlot);
+                const actualSlot = parseInt(targetSlot.dataset.slotIndex);
+
+                if (expectedSlot === actualSlot) {
+                    // Correct placement!
+                    placeItem(draggedItem, targetSlot);
+                } else {
+                    // Wrong slot
+                    playSound('wrong');
+                    targetSlot.classList.add('wrong');
+                    setTimeout(() => targetSlot.classList.remove('wrong'), 300);
+                    resetItemPosition(draggedItem);
+                }
+            } else {
+                resetItemPosition(draggedItem);
+            }
+
+            draggedItem.classList.remove('dragging');
+            draggedItem.style.left = '';
+            draggedItem.style.top = '';
+            draggedItem = null;
+
+            document.removeEventListener('mousemove', onDrag);
+            document.removeEventListener('mouseup', endDrag);
+            document.removeEventListener('touchmove', onDrag);
+            document.removeEventListener('touchend', endDrag);
+        }
+
+        function placeItem(item, slot) {
+            playSound('place');
+
+            // Clear hint
+            const hint = slot.querySelector('.hint');
+            if (hint) hint.remove();
+
+            // Add emoji to slot
+            slot.textContent = item.dataset.emoji;
+            slot.classList.add('filled');
+
+            // Create sparkle effect
+            createSparkles(slot);
+
+            // Hide dragged item
+            item.classList.add('placed');
+
+            placedItems++;
+            updateProgress();
+
+            // Check if level complete
+            if (placedItems === totalItems) {
+                setTimeout(completeLevel, 500);
+            }
+        }
+
+        function resetItemPosition(item) {
+            // Item returns to items area (handled by CSS)
+        }
+
+        function createSparkles(element) {
+            const rect = element.getBoundingClientRect();
+            const sparkles = ['✨', '⭐', '💫', '🌟'];
+
+            for (let i = 0; i < 6; i++) {
+                const sparkle = document.createElement('div');
+                sparkle.className = 'sparkle';
+                sparkle.textContent = sparkles[Math.floor(Math.random() * sparkles.length)];
+                sparkle.style.left = (rect.left + Math.random() * rect.width) + 'px';
+                sparkle.style.top = (rect.top + Math.random() * rect.height) + 'px';
+                sparkle.style.fontSize = (20 + Math.random() * 20) + 'px';
+                document.body.appendChild(sparkle);
+
+                setTimeout(() => sparkle.remove(), 600);
+            }
+        }
+
+        function updateProgress() {
+            const percent = (placedItems / totalItems) * 100;
+            document.getElementById('progress-fill').style.width = percent + '%';
+        }
+
+        // Timer
+        function startTimer() {
+            startTime = Date.now();
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            document.getElementById('timer').textContent = `⏱️ ${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function getElapsedTime() {
+            return Math.floor((Date.now() - startTime) / 1000);
+        }
+
+        // Level Complete
+        function completeLevel() {
+            stopTimer();
+            playSound('complete');
+
+            const time = getElapsedTime();
+            const level = LEVELS[currentLevel];
+
+            // Calculate stars based on time and moves
+            let stars = 1;
+            const perfectMoves = totalItems;
+            const moveRatio = moves / perfectMoves;
+
+            if (time < 60 && moveRatio <= 1.5) stars = 3;
+            else if (time < 120 && moveRatio <= 2) stars = 2;
+
+            // Save progress
+            if (!levelProgress[level.id] || levelProgress[level.id] < stars) {
+                levelProgress[level.id] = stars;
+                localStorage.setItem('perfectTidyProgress', JSON.stringify(levelProgress));
+            }
+
+            // Show complete screen
+            document.getElementById('complete-screen').style.display = 'flex';
+            document.getElementById('stars-earned').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
+
+            const minutes = Math.floor(time / 60);
+            const seconds = time % 60;
+            document.getElementById('complete-stats').innerHTML = `
+                Time: ${minutes}:${seconds.toString().padStart(2, '0')}<br>
+                Moves: ${moves}
+            `;
+        }
+
+        function restartLevel() {
+            document.getElementById('complete-screen').style.display = 'none';
+            startLevel(currentLevel);
+        }
+
+        function nextLevel() {
+            document.getElementById('complete-screen').style.display = 'none';
+            if (currentLevel < LEVELS.length - 1) {
+                startLevel(currentLevel + 1);
+            } else {
+                showLevelSelect();
+            }
+        }
+
+        function showHint() {
+            // Highlight a random unplaced item's target slot
+            const unplacedItems = document.querySelectorAll('.item:not(.placed)');
+            if (unplacedItems.length === 0) return;
+
+            const randomItem = unplacedItems[Math.floor(Math.random() * unplacedItems.length)];
+            const targetSlotIndex = randomItem.dataset.targetSlot;
+            const targetSlot = document.querySelector(`.slot[data-slot-index="${targetSlotIndex}"]`);
+
+            if (targetSlot && !targetSlot.classList.contains('filled')) {
+                targetSlot.classList.add('highlight');
+                setTimeout(() => targetSlot.classList.remove('highlight'), 2000);
+            }
+        }
+
+        // Initialize
+        showTitleScreen();
+    </script>
+</body>
+</html>
