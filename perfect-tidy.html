@@ -984,7 +984,7 @@
             // Add instruction text
             const instructions = document.createElement('div');
             instructions.className = 'cleaning-instructions';
-            instructions.textContent = '👆 Tap the dirt to clean it!';
+            instructions.textContent = '👆 Drag to wipe away the dirt!';
             container.appendChild(instructions);
 
             // Generate random dirt spots
@@ -993,7 +993,66 @@
                 container.appendChild(dirt);
             }
 
+            // Setup drag-to-clean on container
+            setupDragCleaning(container);
+
             targetArea.appendChild(container);
+        }
+
+        // Drag cleaning state
+        let isDragging = false;
+
+        function setupDragCleaning(container) {
+            // Mouse events
+            container.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                checkDirtAtPoint(e.clientX, e.clientY);
+            });
+
+            container.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    checkDirtAtPoint(e.clientX, e.clientY);
+                }
+            });
+
+            container.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+
+            container.addEventListener('mouseleave', () => {
+                isDragging = false;
+            });
+
+            // Touch events
+            container.addEventListener('touchstart', (e) => {
+                isDragging = true;
+                const touch = e.touches[0];
+                checkDirtAtPoint(touch.clientX, touch.clientY);
+            }, { passive: true });
+
+            container.addEventListener('touchmove', (e) => {
+                if (isDragging) {
+                    const touch = e.touches[0];
+                    checkDirtAtPoint(touch.clientX, touch.clientY);
+                }
+            }, { passive: true });
+
+            container.addEventListener('touchend', () => {
+                isDragging = false;
+            });
+        }
+
+        function checkDirtAtPoint(x, y) {
+            const dirtSpots = document.querySelectorAll('.dirt-spot:not(.cleaned)');
+            dirtSpots.forEach(dirt => {
+                const rect = dirt.getBoundingClientRect();
+                // Check if point is inside dirt spot (with some padding for easier cleaning)
+                const padding = 10;
+                if (x >= rect.left - padding && x <= rect.right + padding &&
+                    y >= rect.top - padding && y <= rect.bottom + padding) {
+                    cleanDirt(dirt);
+                }
+            });
         }
 
         function createDirtSpot(level, index) {
@@ -1014,52 +1073,28 @@
             dirt.style.top = (margin/3 + Math.random() * (100 - margin)) + '%';
             dirt.style.transform = `translate(-50%, -50%) rotate(${Math.random() * 360}deg)`;
 
-            // Track clicks needed
-            dirt.dataset.clicksRemaining = level.clicksToClean;
             dirt.dataset.index = index;
-
-            // Click to clean
-            dirt.addEventListener('click', () => cleanDirt(dirt, level));
 
             return dirt;
         }
 
-        function cleanDirt(dirt, level) {
+        function cleanDirt(dirt) {
             if (dirt.classList.contains('cleaned')) return;
 
-            let remaining = parseInt(dirt.dataset.clicksRemaining);
-            remaining--;
-            dirt.dataset.clicksRemaining = remaining;
+            // Instantly cleaned when dragged over!
+            playSound('clean');
+            dirt.classList.add('cleaned');
 
-            moves++;
+            // Create clean burst effect
+            createCleanBurst(dirt);
 
-            if (remaining > 0) {
-                // Still needs more cleaning
-                playSound('scrub');
-                dirt.classList.add('cleaning');
-                setTimeout(() => dirt.classList.remove('cleaning'), 150);
+            cleanedSpots++;
+            placedItems = cleanedSpots; // For progress bar
+            updateProgress();
 
-                // Shrink slightly and fade
-                const scale = 0.5 + (remaining / level.clicksToClean) * 0.5;
-                const opacity = 0.4 + (remaining / level.clicksToClean) * 0.6;
-                dirt.style.transform = dirt.style.transform.replace(/scale\([^)]*\)/, '') + ` scale(${scale})`;
-                dirt.style.opacity = opacity;
-            } else {
-                // Fully cleaned!
-                playSound('clean');
-                dirt.classList.add('cleaned');
-
-                // Create clean burst effect
-                createCleanBurst(dirt);
-
-                cleanedSpots++;
-                placedItems = cleanedSpots; // For progress bar
-                updateProgress();
-
-                // Check if level complete
-                if (cleanedSpots === totalSpots) {
-                    setTimeout(completeLevel, 500);
-                }
+            // Check if level complete
+            if (cleanedSpots === totalSpots) {
+                setTimeout(completeLevel, 500);
             }
         }
 
@@ -1225,10 +1260,9 @@
 
             const minutes = Math.floor(time / 60);
             const seconds = time % 60;
-            const actionLabel = level.type === 'cleaning' ? 'Taps' : 'Moves';
             document.getElementById('complete-stats').innerHTML = `
                 Time: ${minutes}:${seconds.toString().padStart(2, '0')}<br>
-                ${actionLabel}: ${moves}
+                Spots cleaned: ${totalSpots}
             `;
         }
 
