@@ -433,6 +433,156 @@
             background: #FFD700;
             color: #333;
         }
+
+        /* ========== CLEANING MODE STYLES ========== */
+
+        /* Cleaning surface backgrounds */
+        .window-bg {
+            background: linear-gradient(135deg, #87CEEB 0%, #ADD8E6 100%);
+            border: 15px solid #8B4513;
+            border-radius: 10px;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mirror-bg {
+            background: linear-gradient(135deg, #E8E8E8 0%, #D3D3D3 50%, #E8E8E8 100%);
+            border: 20px solid #DAA520;
+            border-radius: 15px;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .floor-bg {
+            background: linear-gradient(90deg, #DEB887 0%, #D2B48C 10%, #DEB887 20%, #D2B48C 30%, #DEB887 40%, #D2B48C 50%, #DEB887 60%, #D2B48C 70%, #DEB887 80%, #D2B48C 90%, #DEB887 100%);
+            border-radius: 10px;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .counter-bg {
+            background: linear-gradient(180deg, #696969 0%, #808080 100%);
+            border-radius: 10px;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .car-bg {
+            background: linear-gradient(180deg, #DC143C 0%, #B22222 100%);
+            border-radius: 30px;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Dirt spot styles */
+        .dirt-spot {
+            position: absolute;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+
+        .dirt-spot:hover {
+            transform: scale(1.1);
+            filter: brightness(1.2);
+        }
+
+        .dirt-spot.cleaning {
+            animation: scrub 0.15s ease-in-out;
+        }
+
+        @keyframes scrub {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(-5deg) scale(0.95); }
+            75% { transform: rotate(5deg) scale(0.95); }
+        }
+
+        .dirt-spot.cleaned {
+            animation: cleanPop 0.4s ease-out forwards;
+        }
+
+        @keyframes cleanPop {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.5; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        /* Different dirt types */
+        .dirt-mud {
+            background: radial-gradient(ellipse, #5D4037 0%, #3E2723 100%);
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .dirt-dust {
+            background: radial-gradient(ellipse, rgba(169,169,169,0.8) 0%, rgba(128,128,128,0.6) 100%);
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+        }
+
+        .dirt-splash {
+            background: radial-gradient(ellipse, #4169E1 0%, #1E90FF 100%);
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .dirt-food {
+            background: radial-gradient(ellipse, #FF6347 0%, #CD5C5C 100%);
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .dirt-grease {
+            background: radial-gradient(ellipse, rgba(255,215,0,0.7) 0%, rgba(184,134,11,0.8) 100%);
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .dirt-fingerprint {
+            background: radial-gradient(ellipse, rgba(200,200,200,0.5) 0%, rgba(150,150,150,0.3) 100%);
+            border: 2px solid rgba(150,150,150,0.4);
+        }
+
+        /* Clean sparkle burst */
+        .clean-burst {
+            position: absolute;
+            pointer-events: none;
+            font-size: 2rem;
+            animation: burstOut 0.5s ease-out forwards;
+        }
+
+        @keyframes burstOut {
+            0% { transform: scale(0) rotate(0deg); opacity: 1; }
+            100% { transform: scale(2) rotate(180deg); opacity: 0; }
+        }
+
+        /* Cleaning mode hides the items area */
+        .cleaning-mode #items-area {
+            display: none;
+        }
+
+        .cleaning-mode #target-area {
+            flex: 1;
+        }
+
+        /* Cleaning instructions */
+        .cleaning-instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px 25px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            pointer-events: none;
+            z-index: 10;
+        }
     </style>
 </head>
 <body>
@@ -440,7 +590,7 @@
         <!-- Title Screen -->
         <div id="title-screen">
             <h1>✨ Perfect Tidy ✨</h1>
-            <p>Organize everything perfectly!</p>
+            <p>Clean & organize everything perfectly!</p>
             <button class="btn" onclick="showLevelSelect()">Play Now</button>
         </div>
 
@@ -560,6 +710,25 @@
                         osc.start(audioCtx.currentTime + i * 0.15);
                         osc.stop(audioCtx.currentTime + i * 0.15 + 0.3);
                     });
+                    break;
+                case 'scrub':
+                    // Quick scrubbing sound
+                    oscillator.type = 'sawtooth';
+                    oscillator.frequency.setValueAtTime(150, audioCtx.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.05);
+                    gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+                    oscillator.start(audioCtx.currentTime);
+                    oscillator.stop(audioCtx.currentTime + 0.08);
+                    break;
+                case 'clean':
+                    // Satisfying clean pop
+                    oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                    oscillator.start(audioCtx.currentTime);
+                    oscillator.stop(audioCtx.currentTime + 0.2);
                     break;
             }
         }
@@ -733,6 +902,57 @@
                     { emoji: "🌱", slot: 10 },
                     { emoji: "🍂", slot: 11 }
                 ]
+            },
+            // ========== CLEANING LEVELS ==========
+            {
+                id: 9,
+                name: "Dirty Window",
+                icon: "🪟",
+                type: "cleaning",
+                surface: "window",
+                dirtCount: 15,
+                dirtTypes: ["dust", "fingerprint", "splash"],
+                clicksToClean: 3
+            },
+            {
+                id: 10,
+                name: "Messy Mirror",
+                icon: "🪞",
+                type: "cleaning",
+                surface: "mirror",
+                dirtCount: 12,
+                dirtTypes: ["fingerprint", "splash", "dust"],
+                clicksToClean: 2
+            },
+            {
+                id: 11,
+                name: "Muddy Floor",
+                icon: "🧹",
+                type: "cleaning",
+                surface: "floor",
+                dirtCount: 18,
+                dirtTypes: ["mud", "dust", "mud"],
+                clicksToClean: 4
+            },
+            {
+                id: 12,
+                name: "Greasy Counter",
+                icon: "🧽",
+                type: "cleaning",
+                surface: "counter",
+                dirtCount: 14,
+                dirtTypes: ["grease", "food", "splash"],
+                clicksToClean: 3
+            },
+            {
+                id: 13,
+                name: "Dirty Car",
+                icon: "🚗",
+                type: "cleaning",
+                surface: "car",
+                dirtCount: 20,
+                dirtTypes: ["mud", "dust", "splash", "mud"],
+                clicksToClean: 3
             }
         ];
 
@@ -792,15 +1012,33 @@
 
             document.getElementById('level-title').textContent = `Level ${level.id}: ${level.name}`;
 
+            // Show/hide hint button based on level type
+            document.getElementById('hint-btn').style.display = level.type === 'cleaning' ? 'none' : 'block';
+
             setupLevel(level);
             startTimer();
         }
 
         function setupLevel(level) {
             placedItems = 0;
-            totalItems = level.items.length;
             moves = 0;
             selectedItem = null;
+
+            const gameArea = document.getElementById('game-area');
+
+            // Check if this is a cleaning level
+            if (level.type === 'cleaning') {
+                gameArea.classList.add('cleaning-mode');
+                setupCleaningLevel(level);
+            } else {
+                gameArea.classList.remove('cleaning-mode');
+                setupOrganizingLevel(level);
+            }
+        }
+
+        // Setup for organizing levels (original gameplay)
+        function setupOrganizingLevel(level) {
+            totalItems = level.items.length;
             updateProgress();
 
             // Setup items area
@@ -854,6 +1092,128 @@
             }
 
             targetArea.appendChild(container);
+        }
+
+        // Setup for cleaning levels
+        let cleanedSpots = 0;
+        let totalSpots = 0;
+
+        function setupCleaningLevel(level) {
+            cleanedSpots = 0;
+            totalSpots = level.dirtCount;
+            totalItems = totalSpots; // For progress bar
+            updateProgress();
+
+            // Clear items area (hidden in cleaning mode anyway)
+            const itemsArea = document.getElementById('items-area');
+            itemsArea.innerHTML = '';
+
+            // Setup cleaning surface
+            const targetArea = document.getElementById('target-area');
+            targetArea.innerHTML = '';
+
+            const container = document.createElement('div');
+            container.className = `${level.surface}-bg target-container`;
+
+            // Add instruction text
+            const instructions = document.createElement('div');
+            instructions.className = 'cleaning-instructions';
+            instructions.textContent = '👆 Tap the dirt to clean it!';
+            container.appendChild(instructions);
+
+            // Generate random dirt spots
+            for (let i = 0; i < level.dirtCount; i++) {
+                const dirt = createDirtSpot(level, i);
+                container.appendChild(dirt);
+            }
+
+            targetArea.appendChild(container);
+        }
+
+        function createDirtSpot(level, index) {
+            const dirt = document.createElement('div');
+
+            // Random dirt type
+            const dirtType = level.dirtTypes[Math.floor(Math.random() * level.dirtTypes.length)];
+            dirt.className = `dirt-spot dirt-${dirtType}`;
+
+            // Random size
+            const size = 40 + Math.random() * 50;
+            dirt.style.width = size + 'px';
+            dirt.style.height = size * (0.7 + Math.random() * 0.6) + 'px';
+
+            // Random position (keeping away from edges)
+            const margin = 60;
+            dirt.style.left = (margin + Math.random() * (100 - margin * 2 / 5)) + '%';
+            dirt.style.top = (margin/3 + Math.random() * (100 - margin)) + '%';
+            dirt.style.transform = `translate(-50%, -50%) rotate(${Math.random() * 360}deg)`;
+
+            // Track clicks needed
+            dirt.dataset.clicksRemaining = level.clicksToClean;
+            dirt.dataset.index = index;
+
+            // Click to clean
+            dirt.addEventListener('click', () => cleanDirt(dirt, level));
+
+            return dirt;
+        }
+
+        function cleanDirt(dirt, level) {
+            if (dirt.classList.contains('cleaned')) return;
+
+            let remaining = parseInt(dirt.dataset.clicksRemaining);
+            remaining--;
+            dirt.dataset.clicksRemaining = remaining;
+
+            moves++;
+
+            if (remaining > 0) {
+                // Still needs more cleaning
+                playSound('scrub');
+                dirt.classList.add('cleaning');
+                setTimeout(() => dirt.classList.remove('cleaning'), 150);
+
+                // Shrink slightly and fade
+                const scale = 0.5 + (remaining / level.clicksToClean) * 0.5;
+                const opacity = 0.4 + (remaining / level.clicksToClean) * 0.6;
+                dirt.style.transform = dirt.style.transform.replace(/scale\([^)]*\)/, '') + ` scale(${scale})`;
+                dirt.style.opacity = opacity;
+            } else {
+                // Fully cleaned!
+                playSound('clean');
+                dirt.classList.add('cleaned');
+
+                // Create clean burst effect
+                createCleanBurst(dirt);
+
+                cleanedSpots++;
+                placedItems = cleanedSpots; // For progress bar
+                updateProgress();
+
+                // Check if level complete
+                if (cleanedSpots === totalSpots) {
+                    setTimeout(completeLevel, 500);
+                }
+            }
+        }
+
+        function createCleanBurst(element) {
+            const rect = element.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            const bursts = ['✨', '💫', '⭐', '🫧', '💧'];
+
+            for (let i = 0; i < 5; i++) {
+                const burst = document.createElement('div');
+                burst.className = 'clean-burst';
+                burst.textContent = bursts[Math.floor(Math.random() * bursts.length)];
+                burst.style.left = centerX + 'px';
+                burst.style.top = centerY + 'px';
+                document.body.appendChild(burst);
+
+                setTimeout(() => burst.remove(), 500);
+            }
         }
 
         // Click to Select and Place
@@ -999,9 +1359,10 @@
 
             const minutes = Math.floor(time / 60);
             const seconds = time % 60;
+            const actionLabel = level.type === 'cleaning' ? 'Taps' : 'Moves';
             document.getElementById('complete-stats').innerHTML = `
                 Time: ${minutes}:${seconds.toString().padStart(2, '0')}<br>
-                Moves: ${moves}
+                ${actionLabel}: ${moves}
             `;
         }
 
