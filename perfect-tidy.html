@@ -209,7 +209,7 @@
             align-items: center;
             justify-content: center;
             font-size: 3rem;
-            cursor: grab;
+            cursor: pointer;
             transition: all 0.2s ease;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
@@ -219,13 +219,16 @@
             box-shadow: 0 8px 20px rgba(0,0,0,0.15);
         }
 
-        .item.dragging {
-            cursor: grabbing;
-            transform: scale(1.1);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
-            z-index: 1000;
-            position: fixed;
-            pointer-events: none;
+        .item.selected {
+            transform: scale(1.15);
+            box-shadow: 0 0 0 4px #4CAF50, 0 15px 40px rgba(0,0,0,0.3);
+            z-index: 100;
+            animation: pulse 0.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { transform: scale(1.1); }
+            to { transform: scale(1.2); }
         }
 
         .item.placed {
@@ -307,6 +310,12 @@
             border: 3px dashed rgba(255,255,255,0.5);
             transition: all 0.3s ease;
             position: relative;
+            cursor: pointer;
+        }
+
+        .slot:hover:not(.filled) {
+            background: rgba(255,255,255,0.5);
+            transform: scale(1.02);
         }
 
         .slot.highlight {
@@ -791,6 +800,7 @@
             placedItems = 0;
             totalItems = level.items.length;
             moves = 0;
+            selectedItem = null;
             updateProgress();
 
             // Setup items area
@@ -808,9 +818,8 @@
                 div.dataset.targetSlot = item.slot;
                 div.id = `item-${index}`;
 
-                // Drag events
-                div.addEventListener('mousedown', startDrag);
-                div.addEventListener('touchstart', startDrag, { passive: false });
+                // Click to select
+                div.addEventListener('click', () => selectItem(div));
 
                 itemsArea.appendChild(div);
             });
@@ -838,116 +847,55 @@
                     slot.appendChild(hint);
                 }
 
+                // Click to place selected item
+                slot.addEventListener('click', () => placeInSlot(slot));
+
                 container.appendChild(slot);
             }
 
             targetArea.appendChild(container);
         }
 
-        // Drag and Drop
-        let draggedItem = null;
-        let dragOffsetX = 0;
-        let dragOffsetY = 0;
+        // Click to Select and Place
+        let selectedItem = null;
 
-        function startDrag(e) {
-            e.preventDefault();
+        function selectItem(item) {
+            if (item.classList.contains('placed')) return;
 
-            const item = e.target;
-            if (!item.classList.contains('item') || item.classList.contains('placed')) return;
+            // Deselect previous item
+            if (selectedItem) {
+                selectedItem.classList.remove('selected');
+            }
 
-            draggedItem = item;
-
-            const rect = item.getBoundingClientRect();
-            const clientX = e.clientX || e.touches[0].clientX;
-            const clientY = e.clientY || e.touches[0].clientY;
-
-            dragOffsetX = clientX - rect.left;
-            dragOffsetY = clientY - rect.top;
-
-            item.classList.add('dragging');
-            item.style.left = (clientX - dragOffsetX) + 'px';
-            item.style.top = (clientY - dragOffsetY) + 'px';
-
-            playSound('pickup');
-
-            document.addEventListener('mousemove', onDrag);
-            document.addEventListener('mouseup', endDrag);
-            document.addEventListener('touchmove', onDrag, { passive: false });
-            document.addEventListener('touchend', endDrag);
+            // Select new item (or deselect if clicking same item)
+            if (selectedItem === item) {
+                selectedItem = null;
+            } else {
+                selectedItem = item;
+                item.classList.add('selected');
+                playSound('pickup');
+            }
         }
 
-        function onDrag(e) {
-            if (!draggedItem) return;
-            e.preventDefault();
-
-            const clientX = e.clientX || e.touches[0].clientX;
-            const clientY = e.clientY || e.touches[0].clientY;
-
-            draggedItem.style.left = (clientX - dragOffsetX) + 'px';
-            draggedItem.style.top = (clientY - dragOffsetY) + 'px';
-
-            // Highlight valid slot
-            const slots = document.querySelectorAll('.slot');
-            slots.forEach(slot => {
-                slot.classList.remove('highlight');
-                const rect = slot.getBoundingClientRect();
-                if (clientX >= rect.left && clientX <= rect.right &&
-                    clientY >= rect.top && clientY <= rect.bottom) {
-                    if (!slot.classList.contains('filled')) {
-                        slot.classList.add('highlight');
-                    }
-                }
-            });
-        }
-
-        function endDrag(e) {
-            if (!draggedItem) return;
-
-            const clientX = e.clientX || (e.changedTouches && e.changedTouches[0].clientX);
-            const clientY = e.clientY || (e.changedTouches && e.changedTouches[0].clientY);
-
-            // Find slot under cursor
-            const slots = document.querySelectorAll('.slot');
-            let targetSlot = null;
-
-            slots.forEach(slot => {
-                slot.classList.remove('highlight');
-                const rect = slot.getBoundingClientRect();
-                if (clientX >= rect.left && clientX <= rect.right &&
-                    clientY >= rect.top && clientY <= rect.bottom) {
-                    targetSlot = slot;
-                }
-            });
+        function placeInSlot(slot) {
+            if (!selectedItem) return;
+            if (slot.classList.contains('filled')) return;
 
             moves++;
 
-            if (targetSlot && !targetSlot.classList.contains('filled')) {
-                const expectedSlot = parseInt(draggedItem.dataset.targetSlot);
-                const actualSlot = parseInt(targetSlot.dataset.slotIndex);
+            const expectedSlot = parseInt(selectedItem.dataset.targetSlot);
+            const actualSlot = parseInt(slot.dataset.slotIndex);
 
-                if (expectedSlot === actualSlot) {
-                    // Correct placement!
-                    placeItem(draggedItem, targetSlot);
-                } else {
-                    // Wrong slot
-                    playSound('wrong');
-                    targetSlot.classList.add('wrong');
-                    setTimeout(() => targetSlot.classList.remove('wrong'), 300);
-                    resetItemPosition(draggedItem);
-                }
+            if (expectedSlot === actualSlot) {
+                // Correct placement!
+                placeItem(selectedItem, slot);
+                selectedItem = null;
             } else {
-                resetItemPosition(draggedItem);
+                // Wrong slot
+                playSound('wrong');
+                slot.classList.add('wrong');
+                setTimeout(() => slot.classList.remove('wrong'), 300);
             }
-
-            draggedItem.classList.remove('dragging');
-            draggedItem.style.left = '';
-            draggedItem.style.top = '';
-            draggedItem = null;
-
-            document.removeEventListener('mousemove', onDrag);
-            document.removeEventListener('mouseup', endDrag);
-            document.removeEventListener('touchmove', onDrag);
-            document.removeEventListener('touchend', endDrag);
         }
 
         function placeItem(item, slot) {
@@ -964,7 +912,8 @@
             // Create sparkle effect
             createSparkles(slot);
 
-            // Hide dragged item
+            // Hide the item and remove selection
+            item.classList.remove('selected');
             item.classList.add('placed');
 
             placedItems++;
@@ -974,10 +923,6 @@
             if (placedItems === totalItems) {
                 setTimeout(completeLevel, 500);
             }
-        }
-
-        function resetItemPosition(item) {
-            // Item returns to items area (handled by CSS)
         }
 
         function createSparkles(element) {
