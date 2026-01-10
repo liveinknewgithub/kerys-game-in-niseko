@@ -590,7 +590,7 @@
         <!-- Title Screen -->
         <div id="title-screen">
             <h1>✨ Perfect Tidy ✨</h1>
-            <p>Clean & organize everything perfectly!</p>
+            <p>Tap to clean everything spotless!</p>
             <button class="btn" onclick="showLevelSelect()">Play Now</button>
         </div>
 
@@ -738,184 +738,20 @@
             document.getElementById('sound-toggle').textContent = soundEnabled ? '🔊' : '🔇';
         }
 
-        // Level Definitions
+        // Level Definitions - All Cleaning Levels
         const LEVELS = [
             {
                 id: 1,
-                name: "Tidy Closet",
-                icon: "👕",
-                type: "closet",
-                items: [
-                    { emoji: "👕", slot: 0 },
-                    { emoji: "👖", slot: 1 },
-                    { emoji: "👗", slot: 2 },
-                    { emoji: "🧥", slot: 3 },
-                    { emoji: "👔", slot: 4 },
-                    { emoji: "🧣", slot: 5 },
-                    { emoji: "🧤", slot: 6 },
-                    { emoji: "🧢", slot: 7 },
-                    { emoji: "👟", slot: 8 },
-                    { emoji: "👠", slot: 9 },
-                    { emoji: "👜", slot: 10 },
-                    { emoji: "🎒", slot: 11 }
-                ]
-            },
-            {
-                id: 2,
-                name: "Organize Fridge",
-                icon: "🧊",
-                type: "fridge",
-                items: [
-                    { emoji: "🥛", slot: 0 },
-                    { emoji: "🧀", slot: 1 },
-                    { emoji: "🥚", slot: 2 },
-                    { emoji: "🍎", slot: 3 },
-                    { emoji: "🥕", slot: 4 },
-                    { emoji: "🥬", slot: 5 },
-                    { emoji: "🍗", slot: 6 },
-                    { emoji: "🥩", slot: 7 },
-                    { emoji: "🐟", slot: 8 },
-                    { emoji: "🧃", slot: 9 },
-                    { emoji: "🍰", slot: 10 },
-                    { emoji: "🍦", slot: 11 }
-                ]
-            },
-            {
-                id: 3,
-                name: "Clean Desk",
-                icon: "🖥️",
-                type: "desk",
-                items: [
-                    { emoji: "💻", slot: 0 },
-                    { emoji: "🖱️", slot: 1 },
-                    { emoji: "⌨️", slot: 2 },
-                    { emoji: "📱", slot: 3 },
-                    { emoji: "📚", slot: 4 },
-                    { emoji: "✏️", slot: 5 },
-                    { emoji: "📎", slot: 6 },
-                    { emoji: "🖊️", slot: 7 },
-                    { emoji: "📒", slot: 8 },
-                    { emoji: "🗂️", slot: 9 },
-                    { emoji: "☕", slot: 10 },
-                    { emoji: "🪴", slot: 11 }
-                ]
-            },
-            {
-                id: 4,
-                name: "Bookshelf",
-                icon: "📚",
-                type: "bookshelf",
-                items: [
-                    { emoji: "📕", slot: 0 },
-                    { emoji: "📗", slot: 1 },
-                    { emoji: "📘", slot: 2 },
-                    { emoji: "📙", slot: 3 },
-                    { emoji: "📓", slot: 4 },
-                    { emoji: "📔", slot: 5 },
-                    { emoji: "📖", slot: 6 },
-                    { emoji: "🏆", slot: 7 },
-                    { emoji: "🖼️", slot: 8 },
-                    { emoji: "🕯️", slot: 9 },
-                    { emoji: "🪴", slot: 10 },
-                    { emoji: "⏰", slot: 11 },
-                    { emoji: "🎵", slot: 12 },
-                    { emoji: "📷", slot: 13 },
-                    { emoji: "🧸", slot: 14 }
-                ]
-            },
-            {
-                id: 5,
-                name: "Kitchen Counter",
-                icon: "🍳",
-                type: "desk",
-                items: [
-                    { emoji: "🍳", slot: 0 },
-                    { emoji: "🥘", slot: 1 },
-                    { emoji: "🍲", slot: 2 },
-                    { emoji: "🔪", slot: 3 },
-                    { emoji: "🥄", slot: 4 },
-                    { emoji: "🍴", slot: 5 },
-                    { emoji: "🧂", slot: 6 },
-                    { emoji: "🫒", slot: 7 },
-                    { emoji: "🧈", slot: 8 },
-                    { emoji: "🌶️", slot: 9 },
-                    { emoji: "🧅", slot: 10 },
-                    { emoji: "🍋", slot: 11 }
-                ]
-            },
-            {
-                id: 6,
-                name: "Toy Box",
-                icon: "🧸",
-                type: "closet",
-                items: [
-                    { emoji: "🧸", slot: 0 },
-                    { emoji: "🎮", slot: 1 },
-                    { emoji: "🎲", slot: 2 },
-                    { emoji: "🧩", slot: 3 },
-                    { emoji: "🪀", slot: 4 },
-                    { emoji: "🎨", slot: 5 },
-                    { emoji: "🪁", slot: 6 },
-                    { emoji: "⚽", slot: 7 },
-                    { emoji: "🏀", slot: 8 },
-                    { emoji: "🎸", slot: 9 },
-                    { emoji: "🚗", slot: 10 },
-                    { emoji: "✈️", slot: 11 }
-                ]
-            },
-            {
-                id: 7,
-                name: "Makeup Table",
-                icon: "💄",
-                type: "desk",
-                items: [
-                    { emoji: "💄", slot: 0 },
-                    { emoji: "💅", slot: 1 },
-                    { emoji: "🪞", slot: 2 },
-                    { emoji: "💍", slot: 3 },
-                    { emoji: "👑", slot: 4 },
-                    { emoji: "🎀", slot: 5 },
-                    { emoji: "🌸", slot: 6 },
-                    { emoji: "🧴", slot: 7 },
-                    { emoji: "🪥", slot: 8 },
-                    { emoji: "🧼", slot: 9 },
-                    { emoji: "🛁", slot: 10 },
-                    { emoji: "🌺", slot: 11 }
-                ]
-            },
-            {
-                id: 8,
-                name: "Garden Shed",
-                icon: "🌻",
-                type: "closet",
-                items: [
-                    { emoji: "🌻", slot: 0 },
-                    { emoji: "🌷", slot: 1 },
-                    { emoji: "🌹", slot: 2 },
-                    { emoji: "🪴", slot: 3 },
-                    { emoji: "🌵", slot: 4 },
-                    { emoji: "🪻", slot: 5 },
-                    { emoji: "🧤", slot: 6 },
-                    { emoji: "🪣", slot: 7 },
-                    { emoji: "🚿", slot: 8 },
-                    { emoji: "🪨", slot: 9 },
-                    { emoji: "🌱", slot: 10 },
-                    { emoji: "🍂", slot: 11 }
-                ]
-            },
-            // ========== CLEANING LEVELS ==========
-            {
-                id: 9,
                 name: "Dirty Window",
                 icon: "🪟",
                 type: "cleaning",
                 surface: "window",
-                dirtCount: 15,
+                dirtCount: 10,
                 dirtTypes: ["dust", "fingerprint", "splash"],
-                clicksToClean: 3
+                clicksToClean: 2
             },
             {
-                id: 10,
+                id: 2,
                 name: "Messy Mirror",
                 icon: "🪞",
                 type: "cleaning",
@@ -925,17 +761,17 @@
                 clicksToClean: 2
             },
             {
-                id: 11,
+                id: 3,
                 name: "Muddy Floor",
                 icon: "🧹",
                 type: "cleaning",
                 surface: "floor",
-                dirtCount: 18,
-                dirtTypes: ["mud", "dust", "mud"],
-                clicksToClean: 4
+                dirtCount: 15,
+                dirtTypes: ["mud", "dust"],
+                clicksToClean: 3
             },
             {
-                id: 12,
+                id: 4,
                 name: "Greasy Counter",
                 icon: "🧽",
                 type: "cleaning",
@@ -945,13 +781,43 @@
                 clicksToClean: 3
             },
             {
-                id: 13,
+                id: 5,
                 name: "Dirty Car",
                 icon: "🚗",
                 type: "cleaning",
                 surface: "car",
+                dirtCount: 18,
+                dirtTypes: ["mud", "dust", "splash"],
+                clicksToClean: 3
+            },
+            {
+                id: 6,
+                name: "Dusty Bookshelf",
+                icon: "📚",
+                type: "cleaning",
+                surface: "floor",
                 dirtCount: 20,
-                dirtTypes: ["mud", "dust", "splash", "mud"],
+                dirtTypes: ["dust", "dust", "fingerprint"],
+                clicksToClean: 2
+            },
+            {
+                id: 7,
+                name: "Messy Kitchen",
+                icon: "🍳",
+                type: "cleaning",
+                surface: "counter",
+                dirtCount: 16,
+                dirtTypes: ["food", "grease", "splash"],
+                clicksToClean: 4
+            },
+            {
+                id: 8,
+                name: "Bathroom Tiles",
+                icon: "🚿",
+                type: "cleaning",
+                surface: "mirror",
+                dirtCount: 22,
+                dirtTypes: ["splash", "dust", "fingerprint"],
                 clicksToClean: 3
             }
         ];
